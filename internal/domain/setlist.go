@@ -1,12 +1,11 @@
 package domain
 
-type Song struct {
-	Artist string
-	Name   string
-}
+import "context"
 
 type Setlist struct {
-	Songs []Song
+	Artist string
+	Venue  string
+	Songs  []string
 }
 
 type GetSetlistOption func(*GetSetlistOptions)
@@ -16,7 +15,7 @@ type GetSetlistOptions struct {
 }
 
 type SetlistRepository interface {
-	GetSetlists(artist string, opts ...GetSetlistOption) ([]Setlist, error)
+	GetSetlists(ctx context.Context, artist string, opts ...GetSetlistOption) ([]Setlist, error)
 }
 
 func WithMaxSetlists(max int) GetSetlistOption {
