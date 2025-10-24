@@ -3,6 +3,7 @@ module github.com/michaelheyman/spotify-cli
 go 1.25.3
 
 require (
+	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/spf13/cobra v1.10.1
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1

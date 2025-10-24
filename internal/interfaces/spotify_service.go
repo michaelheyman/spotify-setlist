@@ -17,8 +17,6 @@ type SpotifyClient interface {
 	AddTracksToPlaylist(ctx context.Context, playlistID spotify.ID, trackIDs ...spotify.ID) (snapshotID string, err error)
 	CreatePlaylistForUser(ctx context.Context, userID, playlistName, description string, public bool, collaborative bool) (*spotify.FullPlaylist, error)
 	CurrentUser(ctx context.Context) (*spotify.PrivateUser, error)
-	// GetTrack(ctx context.Context, id spotify.ID, opts ...spotify.RequestOption) (*spotify.FullTrack, error)
-	// GetTracks(ctx context.Context, ids []spotify.ID, opts ...spotify.RequestOption) ([]*spotify.FullTrack, error)
 	Search(ctx context.Context, query string, t spotify.SearchType, opts ...spotify.RequestOption) (*spotify.SearchResult, error)
 }
 
@@ -33,7 +31,9 @@ func NewSpotifyService(client SpotifyClient) spotifyService {
 }
 
 func (s spotifyService) CreatePlaylist(ctx context.Context, playlist domain.Playlist) error {
-	// TODO: add playlist validation
+	if err := playlist.Validate(); err != nil {
+		return fmt.Errorf("validating playlist parameter: %w", err)
+	}
 
 	trackIDs, err := s.getTrackIDs(ctx, playlist.Artist, playlist.Songs)
 	if err != nil {
