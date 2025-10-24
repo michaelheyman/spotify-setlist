@@ -1,0 +1,17 @@
+all: false
+dir: '{{.InterfaceDir}}'
+filename: mocks/{{ .InterfaceName	| lower }}.gen.go
+force-file-write: true
+formatter: goimports
+include-auto-generated: false
+log-level: info
+structname: '{{.InterfaceName}}'
+pkgname: mocks
+recursive: false
+require-template-schema-exists: true
+template: testify
+template-schema: '{{.Template}}.schema.json'
+packages:
+  github.com/michaelheyman/spotify-cli/internal/interfaces:
+    config:
+      all: true
