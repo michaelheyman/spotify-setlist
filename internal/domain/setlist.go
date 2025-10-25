@@ -1,11 +1,15 @@
 package domain
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 type Setlist struct {
-	Artist string
-	Venue  string
-	Songs  []string
+	Artist    string
+	Venue     string
+	Songs     []string
+	EventDate time.Time
 }
 
 type GetSetlistOption func(*GetSetlistOptions)

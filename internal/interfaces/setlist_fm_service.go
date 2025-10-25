@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/michaelheyman/spotify-cli/internal/domain"
 )
@@ -107,24 +108,54 @@ func (s setlistFMService) getArtistSetlists(ctx context.Context, mbid string) ([
 		return nil, fmt.Errorf("decoding response: %w", err)
 	}
 
-	return artistSetlistsResponse.toSetlists(), nil
+	setlists, err := artistSetlistsResponse.toSetlists()
+	if err != nil {
+		return nil, fmt.Errorf("converting response to setlists: %w", err)
+	}
+
+	return setlists, nil
 }
 
-func (asr getArtistSetlistsResponse) toSetlists() []domain.Setlist {
+func (asr getArtistSetlistsResponse) toSetlists() ([]domain.Setlist, error) {
 	var setlists []domain.Setlist
 	for _, s := range asr.Setlist {
 		var songs []string
+		var setlist domain.Setlist
 		for _, set := range s.Sets.Set {
 			for _, song := range set.Song {
 				songs = append(songs, song.Name)
 			}
 		}
-		setlists = append(setlists, domain.Setlist{
+
+		setlist = domain.Setlist{
 			Artist: s.Artist.Name,
 			Venue:  s.Venue.Name,
 			Songs:  songs,
-		})
+		}
+
+		eventDate, err := setlistEventDate(s.EventDate)
+		if err == nil {
+			// Quiety ignore failures of event date for now
+			setlist.EventDate = eventDate
+		}
+
+		setlists = append(setlists, setlist)
 	}
 
-	return setlists
+	return setlists, nil
+}
+
+func setlistEventDate(date string) (time.Time, error) {
+	if date == "" {
+		return time.Time{}, fmt.Errorf("invalid date: %s", date)
+	}
+
+	layout := "02-01-2006"
+
+	t, err := time.Parse(layout, date)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("parsing date '%s': %w", date, err)
+	}
+
+	return t, nil
 }
