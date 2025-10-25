@@ -9,11 +9,6 @@ import (
 	spotify "github.com/zmb3/spotify/v2"
 )
 
-const (
-	playlistVisibility    = false
-	playlistCollaborative = false
-)
-
 type SpotifyClient interface {
 	AddTracksToPlaylist(ctx context.Context, playlistID spotify.ID, trackIDs ...spotify.ID) (snapshotID string, err error)
 	CreatePlaylistForUser(ctx context.Context, userID, playlistName, description string, public bool, collaborative bool) (*spotify.FullPlaylist, error)
@@ -31,17 +26,22 @@ func NewSpotifyService(client SpotifyClient) spotifyService {
 	}
 }
 
-func (s spotifyService) CreatePlaylist(ctx context.Context, playlist domain.Playlist) (domain.CreatePlaylistResult, error) {
+func (s spotifyService) CreatePlaylist(ctx context.Context, playlist domain.Playlist, opts ...domain.CreatePlaylistOption) (domain.CreatePlaylistResult, error) {
 	if err := playlist.Validate(); err != nil {
 		return domain.CreatePlaylistResult{}, fmt.Errorf("validating playlist parameter: %w", err)
 	}
 
-	trackIDs, missingSongs, err := s.findTracks(ctx, playlist.Artist, playlist.Songs, false)
+	var options domain.CreatePlaylistOptions
+	for _, opt := range opts {
+		opt(&options)
+	}
+
+	trackIDs, missingSongs, err := s.findTracks(ctx, playlist.Artist, playlist.Songs, options.MostPopularTrack)
 	if err != nil {
 		return domain.CreatePlaylistResult{}, fmt.Errorf("getting track IDs: %w", err)
 	}
 
-	if err := s.createPlaylist(ctx, playlist, trackIDs); err != nil {
+	if err := s.createPlaylist(ctx, playlist, trackIDs, options.Visibility, options.Collaborative); err != nil {
 		return domain.CreatePlaylistResult{}, fmt.Errorf("creating playlist: %w", err)
 	}
 	return domain.CreatePlaylistResult{
@@ -80,7 +80,13 @@ func (s spotifyService) findTracks(ctx context.Context, artist string, songs []s
 	return trackIDs, missing, nil
 }
 
-func (s spotifyService) createPlaylist(ctx context.Context, playlist domain.Playlist, trackIDs []spotify.ID) error {
+func (s spotifyService) createPlaylist(
+	ctx context.Context,
+	playlist domain.Playlist,
+	trackIDs []spotify.ID,
+	visibility bool,
+	collaborative bool,
+) error {
 	user, err := s.client.CurrentUser(ctx)
 	if err != nil {
 		return fmt.Errorf("getting current user: %w", err)
@@ -91,8 +97,8 @@ func (s spotifyService) createPlaylist(ctx context.Context, playlist domain.Play
 		user.ID,
 		playlist.Name,
 		playlist.Description,
-		playlistVisibility,
-		playlistCollaborative,
+		visibility,
+		collaborative,
 	)
 	if err != nil {
 		return fmt.Errorf("creating: %w", err)
