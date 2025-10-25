@@ -5,6 +5,10 @@ import (
 	"time"
 )
 
+type SetlistGetter interface {
+	GetSetlists(ctx context.Context, artist string, opts ...GetSetlistOption) ([]Setlist, error)
+}
+
 type Setlist struct {
 	Artist    string
 	Venue     string
