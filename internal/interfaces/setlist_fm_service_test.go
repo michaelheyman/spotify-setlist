@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/michaelheyman/spotify-cli/internal/domain"
 	"github.com/stretchr/testify/assert"
@@ -80,6 +81,7 @@ func TestSetlistFMService_GetSetlists(t *testing.T) {
 						"Last Train",
 						"Sunset",
 					},
+					EventDate: time.Date(2020, time.October, 30, 0, 0, 0, 0, time.UTC),
 				},
 				{
 					Artist: "The Midnight",
@@ -92,6 +94,7 @@ func TestSetlistFMService_GetSetlists(t *testing.T) {
 						"Gloria",
 						"Sunset",
 					},
+					EventDate: time.Date(2019, time.November, 17, 0, 0, 0, 0, time.UTC),
 				},
 			},
 			wantErr: assert.NoError,

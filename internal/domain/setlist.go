@@ -1,11 +1,19 @@
 package domain
 
-import "context"
+import (
+	"context"
+	"time"
+)
+
+type SetlistGetter interface {
+	GetSetlists(ctx context.Context, artist string, opts ...GetSetlistOption) ([]Setlist, error)
+}
 
 type Setlist struct {
-	Artist string
-	Venue  string
-	Songs  []string
+	Artist    string
+	Venue     string
+	Songs     []string
+	EventDate time.Time
 }
 
 type GetSetlistOption func(*GetSetlistOptions)
