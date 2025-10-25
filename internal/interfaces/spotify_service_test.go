@@ -2,6 +2,7 @@ package interfaces
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/michaelheyman/spotify-cli/internal/domain"
@@ -13,9 +14,11 @@ import (
 
 func Test_spotifyService_CreatePlaylist(t *testing.T) {
 	testdata := struct {
-		playlist          domain.Playlist
-		spotifyUserID     string
-		spotifyPlaylistID string
+		playlist                   domain.Playlist
+		spotifyUserID              string
+		spotifyPlaylistID          string
+		spotifySearchResultSuccess *spotify.SearchResult
+		createResult               domain.CreatePlaylistResult
 	}{
 		playlist: domain.Playlist{
 			Name:        "playlist name",
@@ -25,12 +28,33 @@ func Test_spotifyService_CreatePlaylist(t *testing.T) {
 		},
 		spotifyUserID:     "example-user-id",
 		spotifyPlaylistID: "37i9dQZF1DWXRqgorJj26U",
+		createResult: domain.CreatePlaylistResult{
+			Playlist: domain.Playlist{
+				Name:        "playlist name",
+				Description: "playlist description",
+				Artist:      "artist name",
+				Songs:       []string{"first", "second", "third"},
+			},
+		},
+		spotifySearchResultSuccess: &spotify.SearchResult{
+			Tracks: &spotify.FullTrackPage{
+				Tracks: []spotify.FullTrack{
+					{
+						SimpleTrack: spotify.SimpleTrack{
+							Name: "first",
+							ID:   "fist-track-id",
+						},
+					},
+				},
+			},
+		},
 	}
 
 	tests := []struct {
 		name            string
 		playlist        domain.Playlist
 		setExpectations func(c *mocks.SpotifyClient)
+		want            domain.CreatePlaylistResult
 		wantErr         assert.ErrorAssertionFunc
 	}{
 		{
@@ -43,7 +67,7 @@ func Test_spotifyService_CreatePlaylist(t *testing.T) {
 						mock.Anything,
 						spotify.SearchType(spotify.SearchTypeTrack),
 					).
-					Return(&spotify.SearchResult{}, nil).
+					Return(testdata.spotifySearchResultSuccess, nil).
 					Times(len(testdata.playlist.Songs))
 				c.EXPECT().
 					CurrentUser(mock.Anything).
@@ -79,16 +103,18 @@ func Test_spotifyService_CreatePlaylist(t *testing.T) {
 					).
 					Return("some-snapshot-id", nil)
 			},
+			want:    testdata.createResult,
 			wantErr: assert.NoError,
 		},
 		{
 			name:     "should return error when spotify search for track fails",
 			playlist: testdata.playlist,
 			setExpectations: func(c *mocks.SpotifyClient) {
+				query := fmt.Sprintf(`track:"%s" artist:"%s"`, "first", testdata.playlist.Artist)
 				c.EXPECT().
 					Search(
 						mock.Anything,
-						"first",
+						query,
 						spotify.SearchType(spotify.SearchTypeTrack),
 					).
 					Return(nil, assert.AnError)
@@ -96,6 +122,57 @@ func Test_spotifyService_CreatePlaylist(t *testing.T) {
 			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
 				return assert.ErrorContains(t, err, "getting track IDs: searching for song 'first'") &&
 					assert.ErrorIs(t, err, assert.AnError)
+			},
+		},
+		{
+			name: "should return error when spotify search for track returns no tracks",
+			playlist: domain.Playlist{
+				Name:        "playlist name",
+				Description: "playlist description",
+				Artist:      "artist name",
+				Songs:       []string{"first"},
+			},
+			setExpectations: func(c *mocks.SpotifyClient) {
+				query := fmt.Sprintf(`track:"%s" artist:"%s"`, "first", testdata.playlist.Artist)
+				c.EXPECT().
+					Search(
+						mock.Anything,
+						query,
+						spotify.SearchType(spotify.SearchTypeTrack),
+					).
+					Return(&spotify.SearchResult{}, nil)
+			},
+			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
+				return assert.Equal(t, err.Error(), "getting track IDs: no tracks found")
+			},
+		},
+		{
+			name: "should return error when spotify search for track returns empty tracks",
+			playlist: domain.Playlist{
+				Name:        "playlist name",
+				Description: "playlist description",
+				Artist:      "artist name",
+				Songs:       []string{"first"},
+			},
+			setExpectations: func(c *mocks.SpotifyClient) {
+				query := fmt.Sprintf(`track:"%s" artist:"%s"`, "first", testdata.playlist.Artist)
+				c.EXPECT().
+					Search(
+						mock.Anything,
+						query,
+						spotify.SearchType(spotify.SearchTypeTrack),
+					).
+					Return(
+						&spotify.SearchResult{
+							Tracks: &spotify.FullTrackPage{
+								Tracks: []spotify.FullTrack{},
+							},
+						},
+						nil,
+					)
+			},
+			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
+				return assert.Equal(t, err.Error(), "getting track IDs: no tracks found")
 			},
 		},
 		{
@@ -108,7 +185,7 @@ func Test_spotifyService_CreatePlaylist(t *testing.T) {
 						mock.Anything,
 						spotify.SearchType(spotify.SearchTypeTrack),
 					).
-					Return(&spotify.SearchResult{}, nil).
+					Return(testdata.spotifySearchResultSuccess, nil).
 					Times(len(testdata.playlist.Songs))
 				c.EXPECT().
 					CurrentUser(mock.Anything).
@@ -129,7 +206,7 @@ func Test_spotifyService_CreatePlaylist(t *testing.T) {
 						mock.Anything,
 						spotify.SearchType(spotify.SearchTypeTrack),
 					).
-					Return(&spotify.SearchResult{}, nil).
+					Return(testdata.spotifySearchResultSuccess, nil).
 					Times(len(testdata.playlist.Songs))
 				c.EXPECT().
 					CurrentUser(mock.Anything).
@@ -166,7 +243,7 @@ func Test_spotifyService_CreatePlaylist(t *testing.T) {
 						mock.Anything,
 						spotify.SearchType(spotify.SearchTypeTrack),
 					).
-					Return(&spotify.SearchResult{}, nil).
+					Return(testdata.spotifySearchResultSuccess, nil).
 					Times(len(testdata.playlist.Songs))
 				c.EXPECT().
 					CurrentUser(mock.Anything).
@@ -215,8 +292,12 @@ func Test_spotifyService_CreatePlaylist(t *testing.T) {
 			defer client.AssertExpectations(t)
 
 			s := NewSpotifyService(client)
-			err := s.CreatePlaylist(context.Background(), tt.playlist)
+			got, err := s.CreatePlaylist(context.Background(), tt.playlist)
+
 			tt.wantErr(t, err, "CreatePlaylist returned error")
+			if err == nil {
+				assert.Equal(t, tt.want, got)
+			}
 		})
 	}
 }

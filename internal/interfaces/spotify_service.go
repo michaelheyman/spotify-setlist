@@ -2,6 +2,7 @@ package interfaces
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/michaelheyman/spotify-cli/internal/domain"
@@ -30,36 +31,53 @@ func NewSpotifyService(client SpotifyClient) spotifyService {
 	}
 }
 
-func (s spotifyService) CreatePlaylist(ctx context.Context, playlist domain.Playlist) error {
+func (s spotifyService) CreatePlaylist(ctx context.Context, playlist domain.Playlist) (domain.CreatePlaylistResult, error) {
 	if err := playlist.Validate(); err != nil {
-		return fmt.Errorf("validating playlist parameter: %w", err)
+		return domain.CreatePlaylistResult{}, fmt.Errorf("validating playlist parameter: %w", err)
 	}
 
-	trackIDs, err := s.getTrackIDs(ctx, playlist.Artist, playlist.Songs)
+	trackIDs, missingSongs, err := s.findTracks(ctx, playlist.Artist, playlist.Songs, false)
 	if err != nil {
-		return fmt.Errorf("getting track IDs: %w", err)
+		return domain.CreatePlaylistResult{}, fmt.Errorf("getting track IDs: %w", err)
 	}
-	// TODO: return error if track IDs are empty?
 
 	if err := s.createPlaylist(ctx, playlist, trackIDs); err != nil {
-		return fmt.Errorf("creating playlist: %w", err)
+		return domain.CreatePlaylistResult{}, fmt.Errorf("creating playlist: %w", err)
 	}
-	return nil
+	return domain.CreatePlaylistResult{
+		Playlist:     playlist,
+		MissingSongs: missingSongs,
+	}, nil
 }
 
-func (s spotifyService) getTrackIDs(ctx context.Context, _ string, songs []string) ([]spotify.ID, error) {
+func (s spotifyService) findTracks(ctx context.Context, artist string, songs []string, mostPopular bool) ([]spotify.ID, []string, error) {
 	var trackIDs []spotify.ID
+	var missing []string
+
 	for _, song := range songs {
-		// TODO: figure out how to optimize the query
-		query := song
-		_, err := s.client.Search(ctx, query, spotify.SearchTypeTrack)
+		query := fmt.Sprintf(`track:"%s" artist:"%s"`, song, artist)
+		result, err := s.client.Search(ctx, query, spotify.SearchTypeTrack)
 		if err != nil {
-			return nil, fmt.Errorf("searching for song '%s': %w", song, err)
+			return nil, nil, fmt.Errorf("searching for song '%s': %w", song, err)
 		}
-		// TODO: figure out how to parse result to get the Track ID
+
+		if result.Tracks == nil || len(result.Tracks.Tracks) == 0 {
+			missing = append(missing, song)
+			continue
+		}
+
+		trackID, err := extractTrackID(result.Tracks.Tracks, mostPopular)
+		if err != nil {
+			return nil, nil, fmt.Errorf("extracting track ID from search result: %w", err)
+		}
+		trackIDs = append(trackIDs, trackID)
 	}
 
-	return trackIDs, nil
+	if len(trackIDs) == 0 {
+		return nil, nil, errors.New("no tracks found")
+	}
+
+	return trackIDs, missing, nil
 }
 
 func (s spotifyService) createPlaylist(ctx context.Context, playlist domain.Playlist, trackIDs []spotify.ID) error {
@@ -85,4 +103,26 @@ func (s spotifyService) createPlaylist(ctx context.Context, playlist domain.Play
 	}
 
 	return nil
+}
+
+func extractTrackID(tracks []spotify.FullTrack, mostPopular bool) (spotify.ID, error) {
+	if len(tracks) == 0 {
+		return "", errors.New("no tracks found")
+	}
+
+	if !mostPopular {
+		return tracks[0].ID, nil
+	}
+
+	var highestPopularity spotify.Numeric
+	var mostPopularIndex int
+
+	for i, track := range tracks {
+		if track.Popularity > highestPopularity {
+			highestPopularity = track.Popularity
+			mostPopularIndex = i
+		}
+	}
+
+	return tracks[mostPopularIndex].ID, nil
 }

@@ -7,7 +7,7 @@ import (
 )
 
 type PlaylistRepository interface {
-	CreatePlaylist(ctx context.Context, playlist Playlist) error
+	CreatePlaylist(ctx context.Context, playlist Playlist) (CreatePlaylistResult, error)
 }
 
 type Playlist struct {
@@ -15,6 +15,12 @@ type Playlist struct {
 	Description string
 	Artist      string
 	Songs       []string
+}
+
+type CreatePlaylistResult struct {
+	Playlist     Playlist
+	AddedSongs   []string
+	MissingSongs []string
 }
 
 func (p Playlist) Validate() error {
