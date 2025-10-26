@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/michaelheyman/spotify-cli/internal/domain"
+	"github.com/michaelheyman/spotify-setlist/internal/domain"
 	"github.com/stretchr/testify/assert"
 )
 

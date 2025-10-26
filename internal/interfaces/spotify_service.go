@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/michaelheyman/spotify-cli/internal/domain"
+	"github.com/michaelheyman/spotify-setlist/internal/domain"
 	spotify "github.com/zmb3/spotify/v2"
 )
 

@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/michaelheyman/spotify-cli/internal/domain"
+	"github.com/michaelheyman/spotify-setlist/internal/domain"
 )
 
 type CreatePlaylistParams struct {
