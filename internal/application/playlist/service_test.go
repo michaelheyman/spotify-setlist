@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/michaelheyman/spotify-cli/internal/domain"
-	"github.com/michaelheyman/spotify-cli/internal/domain/mocks"
+	"github.com/michaelheyman/spotify-setlist/internal/domain"
+	"github.com/michaelheyman/spotify-setlist/internal/domain/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

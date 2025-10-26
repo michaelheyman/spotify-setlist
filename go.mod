@@ -1,4 +1,4 @@
-module github.com/michaelheyman/spotify-cli
+module github.com/michaelheyman/spotify-setlist
 
 go 1.25.3
 

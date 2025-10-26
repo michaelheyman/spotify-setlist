@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/michaelheyman/spotify-cli/internal/domain"
+	"github.com/michaelheyman/spotify-setlist/internal/domain"
 )
 
 const (
