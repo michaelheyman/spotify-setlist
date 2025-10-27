@@ -156,8 +156,7 @@ func TestSetlistFMService_GetSetlists(t *testing.T) {
 				tt.handler(w, r)
 			}))
 			defer server.Close()
-			s := NewSetlistFMService(server.Client(), tt.apiKey)
-			s.baseURL = server.URL
+			s := NewSetlistFMService(server.Client(), tt.apiKey, WithBaseURL(server.URL))
 
 			got, gotErr := s.GetSetlists(context.Background(), tt.artist)
 

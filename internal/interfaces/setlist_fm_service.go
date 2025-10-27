@@ -15,17 +15,38 @@ const (
 	baseURL      = "https://api.setlist.fm/rest/1.0"
 )
 
+type SetlistFMService interface {
+	GetSetlists(ctx context.Context, artist string, opts ...domain.GetSetlistOption) ([]domain.Setlist, error)
+}
+
 type setlistFMService struct {
 	client  *http.Client
 	apiKey  string
 	baseURL string
 }
 
-func NewSetlistFMService(client *http.Client, apiKey string) *setlistFMService {
+type Options struct {
+	baseURL string
+}
+
+type Option func(*Options)
+
+func WithBaseURL(url string) Option {
+	return func(o *Options) {
+		o.baseURL = url
+	}
+}
+
+func NewSetlistFMService(client *http.Client, apiKey string, opts ...Option) SetlistFMService {
+	options := defaultOpts()
+	for _, opt := range opts {
+		opt(&options)
+	}
+
 	return &setlistFMService{
 		client:  client,
 		apiKey:  apiKey,
-		baseURL: baseURL,
+		baseURL: options.baseURL,
 	}
 }
 
@@ -81,6 +102,12 @@ func (s setlistFMService) getArtistMBID(ctx context.Context, artist string) (str
 
 	// Return the first artist's MBID since we are getting results sorted by relevance
 	return searchArtistResponse.Artist[0].Mbid, nil
+}
+
+func defaultOpts() Options {
+	return Options{
+		baseURL: baseURL,
+	}
 }
 
 // getArtistSetlists retrieves the setlists for an artist's MBID
