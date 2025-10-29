@@ -153,6 +153,7 @@ func TestSetlistFMService_GetSetlists(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				assert.Equal(t, r.Header.Get(apiKeyHeader), tt.apiKey, "api key header doesn't match submitted api key")
+				assert.Equal(t, r.Header.Get("Accept"), "application/json")
 				tt.handler(w, r)
 			}))
 			defer server.Close()

@@ -118,6 +118,7 @@ func (s setlistFMService) getArtistSetlists(ctx context.Context, mbid string) ([
 	}
 
 	req.Header.Set(apiKeyHeader, s.apiKey)
+	req.Header.Set("Accept", "application/json")
 
 	res, err := s.client.Do(req)
 	if err != nil {
