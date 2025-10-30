@@ -1,4 +1,4 @@
-package interfaces
+package infrastructure
 
 type searchArtistResponse struct {
 	Artist []struct {

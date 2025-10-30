@@ -1,4 +1,4 @@
-package interfaces
+package infrastructure
 
 import (
 	"context"
@@ -15,17 +15,38 @@ const (
 	baseURL      = "https://api.setlist.fm/rest/1.0"
 )
 
+type SetlistFMService interface {
+	GetSetlists(ctx context.Context, artist string, opts ...domain.GetSetlistOption) ([]domain.Setlist, error)
+}
+
 type setlistFMService struct {
 	client  *http.Client
 	apiKey  string
 	baseURL string
 }
 
-func NewSetlistFMService(client *http.Client, apiKey string) *setlistFMService {
+type Options struct {
+	baseURL string
+}
+
+type Option func(*Options)
+
+func WithBaseURL(url string) Option {
+	return func(o *Options) {
+		o.baseURL = url
+	}
+}
+
+func NewSetlistFMService(client *http.Client, apiKey string, opts ...Option) SetlistFMService {
+	options := defaultOpts()
+	for _, opt := range opts {
+		opt(&options)
+	}
+
 	return &setlistFMService{
 		client:  client,
 		apiKey:  apiKey,
-		baseURL: baseURL,
+		baseURL: options.baseURL,
 	}
 }
 
@@ -83,6 +104,12 @@ func (s setlistFMService) getArtistMBID(ctx context.Context, artist string) (str
 	return searchArtistResponse.Artist[0].Mbid, nil
 }
 
+func defaultOpts() Options {
+	return Options{
+		baseURL: baseURL,
+	}
+}
+
 // getArtistSetlists retrieves the setlists for an artist's MBID
 func (s setlistFMService) getArtistSetlists(ctx context.Context, mbid string) ([]domain.Setlist, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/artist/%s/setlists", s.baseURL, mbid), nil)
@@ -91,6 +118,7 @@ func (s setlistFMService) getArtistSetlists(ctx context.Context, mbid string) ([
 	}
 
 	req.Header.Set(apiKeyHeader, s.apiKey)
+	req.Header.Set("Accept", "application/json")
 
 	res, err := s.client.Do(req)
 	if err != nil {

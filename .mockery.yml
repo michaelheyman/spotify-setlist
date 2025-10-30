@@ -15,6 +15,6 @@ packages:
   github.com/michaelheyman/spotify-setlist/internal/domain:
     config:
       all: true
-  github.com/michaelheyman/spotify-setlist/internal/interfaces:
+  github.com/michaelheyman/spotify-setlist/internal/infrastructure:
     config:
       all: true

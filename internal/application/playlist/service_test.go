@@ -41,21 +41,21 @@ func Test_playlistService_CreatePlaylist(t *testing.T) {
 	tests := []struct {
 		name            string
 		params          CreatePlaylistParams
-		setExpectations func(sg *mocks.SetlistGetter, pc *mocks.PlaylistCreator)
+		setExpectations func(sr *mocks.SetlistRepository, pr *mocks.PlaylistRepository)
 		want            CreatePlaylistResult
 		wantErr         assert.ErrorAssertionFunc
 	}{
 		{
 			name:   "should create playlist",
 			params: testdata.parameters,
-			setExpectations: func(sg *mocks.SetlistGetter, pc *mocks.PlaylistCreator) {
-				sg.EXPECT().
+			setExpectations: func(sr *mocks.SetlistRepository, pr *mocks.PlaylistRepository) {
+				sr.EXPECT().
 					GetSetlists(
 						mock.Anything,
 						testdata.parameters.Artist,
 					).
 					Return([]domain.Setlist{testdata.setlist}, nil)
-				pc.EXPECT().
+				pr.EXPECT().
 					CreatePlaylist(
 						mock.Anything,
 						domain.Playlist{
@@ -92,7 +92,7 @@ func Test_playlistService_CreatePlaylist(t *testing.T) {
 		{
 			name:            "should return error when playlist creation parameters are invalid",
 			params:          CreatePlaylistParams{},
-			setExpectations: func(_ *mocks.SetlistGetter, _ *mocks.PlaylistCreator) {},
+			setExpectations: func(_ *mocks.SetlistRepository, _ *mocks.PlaylistRepository) {},
 			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
 				return assert.ErrorContains(t, err, "validating parameters: ")
 			},
@@ -100,8 +100,8 @@ func Test_playlistService_CreatePlaylist(t *testing.T) {
 		{
 			name:   "should return error when retrieving setlists fails",
 			params: testdata.parameters,
-			setExpectations: func(sg *mocks.SetlistGetter, _ *mocks.PlaylistCreator) {
-				sg.EXPECT().
+			setExpectations: func(sr *mocks.SetlistRepository, _ *mocks.PlaylistRepository) {
+				sr.EXPECT().
 					GetSetlists(
 						mock.Anything,
 						testdata.parameters.Artist,
@@ -116,8 +116,8 @@ func Test_playlistService_CreatePlaylist(t *testing.T) {
 			// TODO: add more tests for the select best setlist
 			name:   "should return error when unable to select best setlist",
 			params: testdata.parameters,
-			setExpectations: func(sg *mocks.SetlistGetter, _ *mocks.PlaylistCreator) {
-				sg.EXPECT().
+			setExpectations: func(sr *mocks.SetlistRepository, _ *mocks.PlaylistRepository) {
+				sr.EXPECT().
 					GetSetlists(
 						mock.Anything,
 						testdata.parameters.Artist,
@@ -134,14 +134,14 @@ func Test_playlistService_CreatePlaylist(t *testing.T) {
 		{
 			name:   "should return error when creating playlist fails",
 			params: testdata.parameters,
-			setExpectations: func(sg *mocks.SetlistGetter, pc *mocks.PlaylistCreator) {
-				sg.EXPECT().
+			setExpectations: func(sr *mocks.SetlistRepository, pr *mocks.PlaylistRepository) {
+				sr.EXPECT().
 					GetSetlists(
 						mock.Anything,
 						testdata.parameters.Artist,
 					).
 					Return([]domain.Setlist{testdata.setlist}, nil)
-				pc.EXPECT().
+				pr.EXPECT().
 					CreatePlaylist(
 						mock.Anything,
 						domain.Playlist{
@@ -162,13 +162,13 @@ func Test_playlistService_CreatePlaylist(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			sg := &mocks.SetlistGetter{}
-			pc := &mocks.PlaylistCreator{}
-			tt.setExpectations(sg, pc)
-			defer sg.AssertExpectations(t)
-			defer pc.AssertExpectations(t)
+			sr := &mocks.SetlistRepository{}
+			pr := &mocks.PlaylistRepository{}
+			tt.setExpectations(sr, pr)
+			defer sr.AssertExpectations(t)
+			defer pr.AssertExpectations(t)
 
-			p := NewPlaylistService(sg, pc)
+			p := NewPlaylistService(sr, pr)
 
 			got, gotErr := p.CreatePlaylist(context.Background(), tt.params)
 

@@ -10,10 +10,6 @@ type PlaylistRepository interface {
 	CreatePlaylist(ctx context.Context, playlist Playlist, opts ...CreatePlaylistOption) (CreatePlaylistResult, error)
 }
 
-type PlaylistCreator interface {
-	CreatePlaylist(ctx context.Context, playlist Playlist, opts ...CreatePlaylistOption) (CreatePlaylistResult, error)
-}
-
 type Playlist struct {
 	Name        string
 	Description string
