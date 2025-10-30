@@ -1,4 +1,4 @@
-package interfaces
+package infrastructure
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/michaelheyman/spotify-setlist/internal/domain"
-	"github.com/michaelheyman/spotify-setlist/internal/interfaces/mocks"
+	"github.com/michaelheyman/spotify-setlist/internal/infrastructure/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/zmb3/spotify/v2"
