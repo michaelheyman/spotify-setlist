@@ -34,14 +34,14 @@ type PlaylistService interface {
 }
 
 type playlistService struct {
-	setlist  domain.SetlistGetter
-	playlist domain.PlaylistCreator
+	setlist  domain.SetlistRepository
+	playlist domain.PlaylistRepository
 }
 
-func NewPlaylistService(setlistGetter domain.SetlistGetter, playlistCreator domain.PlaylistCreator) playlistService {
+func NewPlaylistService(setlist domain.SetlistRepository, playlist domain.PlaylistRepository) playlistService {
 	return playlistService{
-		setlist:  setlistGetter,
-		playlist: playlistCreator,
+		setlist:  setlist,
+		playlist: playlist,
 	}
 }
 
