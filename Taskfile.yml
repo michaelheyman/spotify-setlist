@@ -1,0 +1,42 @@
+version: "3"
+
+tasks:
+  coverage:
+    deps: [test]
+    desc: run unit tests and create HTML coverage file
+    cmds:
+      - go tool cover -html=coverage.txt
+
+  fmt:
+    desc: auto-format all go files
+    sources:
+      - "**/*.go"
+    cmds:
+      - gofumpt -l -w .
+
+  mocks:
+    desc: generate new mocks from scratch
+    cmds:
+      - task: mocks.remove
+      - task: mocks.generate
+
+  mocks.remove:
+    desc: remove all mock files
+    # platforms: ["darwin", "linux"]
+    cmds:
+      - find . -name '*mock.gen.go' | xargs -r rm
+      - find ./internal -type d -name "*mocks" | xargs -r rm -rf
+
+  mocks.generate:
+    desc: generate mocks
+    cmds:
+      - mockery
+
+  test:
+    cmds:
+      - go run gotest.tools/gotestsum --format testname -- -v -coverprofile=coverage.txt ./internal/...
+    desc: run unit tests
+    generates:
+      - coverage.txt
+    deps:
+      - mocks.generate
