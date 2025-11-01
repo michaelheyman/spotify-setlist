@@ -1,6 +1,6 @@
 all: false
 dir: '{{.InterfaceDir}}'
-filename: mocks/{{ .InterfaceName	| lower }}.gen.go
+filename: mocks/{{ .InterfaceName	| lower }}.mock.gen.go
 force-file-write: true
 formatter: goimports
 include-auto-generated: false
@@ -12,6 +12,9 @@ require-template-schema-exists: true
 template: testify
 template-schema: '{{.Template}}.schema.json'
 packages:
+  github.com/michaelheyman/spotify-setlist/internal/application/playlist:
+    config:
+      all: true
   github.com/michaelheyman/spotify-setlist/internal/domain:
     config:
       all: true
