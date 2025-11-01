@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/michaelheyman/spotify-setlist/internal/domain"
-	"github.com/michaelheyman/spotify-setlist/internal/infrastructure/mocks"
+	"github.com/michaelheyman/spotify-setlist/internal/domain/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/zmb3/spotify/v2"
