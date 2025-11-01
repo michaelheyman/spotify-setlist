@@ -6,29 +6,29 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/michaelheyman/spotify-setlist/internal/infrastructure"
+	"github.com/michaelheyman/spotify-setlist/internal/domain"
 )
 
 type SpotifyAuthHandler interface {
 	StartAuthFlow(ctx context.Context) (string, error)
-	WaitForClient(ctx context.Context) (infrastructure.SpotifyClient, error)
+	WaitForClient(ctx context.Context) (domain.SpotifyClient, error)
 }
 
 type spotifyAuthHandler struct {
-	spotify       infrastructure.SpotifyClientFactory
-	auth          infrastructure.SpotifyAuthenticator
+	spotify       domain.SpotifyClientFactory
+	auth          domain.SpotifyAuthenticator
 	state         string
-	clientChan    chan infrastructure.SpotifyClient
+	clientChan    chan domain.SpotifyClient
 	server        *http.Server
 	serverErrChan chan error
 }
 
-func NewSpotifyAuthHandler(spotify infrastructure.SpotifyClientFactory, auth infrastructure.SpotifyAuthenticator) SpotifyAuthHandler {
+func NewSpotifyAuthHandler(spotify domain.SpotifyClientFactory, auth domain.SpotifyAuthenticator) SpotifyAuthHandler {
 	return &spotifyAuthHandler{
 		spotify:       spotify,
 		auth:          auth,
 		state:         "abc123",
-		clientChan:    make(chan infrastructure.SpotifyClient),
+		clientChan:    make(chan domain.SpotifyClient),
 		serverErrChan: make(chan error),
 	}
 }
@@ -58,7 +58,7 @@ func (s *spotifyAuthHandler) StartAuthFlow(ctx context.Context) (string, error) 
 	return url, nil
 }
 
-func (s *spotifyAuthHandler) WaitForClient(ctx context.Context) (infrastructure.SpotifyClient, error) {
+func (s *spotifyAuthHandler) WaitForClient(ctx context.Context) (domain.SpotifyClient, error) {
 	select {
 	case client := <-s.clientChan:
 		// Auth completed successfully

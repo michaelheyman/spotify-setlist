@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/michaelheyman/spotify-setlist/internal/infrastructure"
-	"github.com/michaelheyman/spotify-setlist/internal/infrastructure/mocks"
+	"github.com/michaelheyman/spotify-setlist/internal/domain"
+	"github.com/michaelheyman/spotify-setlist/internal/domain/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"golang.org/x/oauth2"
@@ -101,7 +101,7 @@ func Test_spotifyAuthHandler_StartAuthFlow(t *testing.T) {
 				spotify:       c,
 				auth:          a,
 				state:         state,
-				clientChan:    make(chan infrastructure.SpotifyClient),
+				clientChan:    make(chan domain.SpotifyClient),
 				serverErrChan: make(chan error),
 			}
 

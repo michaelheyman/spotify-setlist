@@ -4,24 +4,15 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/michaelheyman/spotify-setlist/internal/domain"
 	spotify "github.com/zmb3/spotify/v2"
 	"golang.org/x/oauth2"
 )
 
-type SpotifyClientFactory interface {
-	NewClient(httpClient *http.Client) SpotifyClient
-}
-
-type SpotifyAuthenticator interface {
-	AuthURL(state string) string
-	Token(ctx context.Context, state string, r *http.Request) (*oauth2.Token, error)
-	Client(ctx context.Context, token *oauth2.Token) *http.Client
-}
-
 type ExternalSpotifyClientFactory struct {
 }
 
-func (s ExternalSpotifyClientFactory) NewClient(httpClient *http.Client) SpotifyClient {
+func (s ExternalSpotifyClientFactory) NewClient(httpClient *http.Client) domain.SpotifyClient {
 	return spotify.New(httpClient)
 }
 
