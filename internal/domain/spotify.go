@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/zmb3/spotify/v2"
 	"golang.org/x/oauth2"
 )
@@ -24,4 +25,25 @@ type SpotifyAuthenticator interface {
 	AuthURL(state string) string
 	Token(ctx context.Context, state string, r *http.Request) (*oauth2.Token, error)
 	Client(ctx context.Context, token *oauth2.Token) *http.Client
+}
+
+type AuthenticationFactory interface {
+	CreateAuthenticator(ctx context.Context, config SpotifyAuthConfig) (SpotifyAuthenticator, error)
+}
+
+type SpotifyAuthConfig struct {
+	ClientID     string
+	ClientSecret string
+	RedirectURI  string
+	Scopes       []string
+}
+
+func (c SpotifyAuthConfig) Validate() error {
+	return validation.ValidateStruct(
+		&c,
+		validation.Field(&c.ClientID, validation.Required),
+		validation.Field(&c.ClientSecret, validation.Required),
+		validation.Field(&c.RedirectURI, validation.Required),
+		validation.Field(&c.Scopes, validation.Required),
+	)
 }

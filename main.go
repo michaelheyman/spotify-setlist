@@ -3,8 +3,26 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 */
 package main
 
-import "github.com/michaelheyman/spotify-setlist/cmd"
+import (
+	"context"
+	"net/http"
+	"os"
+	"time"
+
+	"github.com/michaelheyman/spotify-setlist/cmd"
+	"github.com/michaelheyman/spotify-setlist/internal/infrastructure"
+)
 
 func main() {
-	cmd.Execute()
+	ctx := context.Background()
+
+	deps := &cmd.Dependencies{
+		AuthFactory: infrastructure.NewSpotifyAuthFactory(),
+		HttpClient:  &http.Client{Timeout: 15 * time.Second},
+	}
+
+	rootCmd := cmd.NewRootCmd(deps)
+	if err := rootCmd.ExecuteContext(ctx); err != nil {
+		os.Exit(1)
+	}
 }
