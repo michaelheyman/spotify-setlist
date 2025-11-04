@@ -13,7 +13,7 @@ type ExternalSpotifyClientFactory struct {
 }
 
 func (s ExternalSpotifyClientFactory) NewClient(httpClient *http.Client) domain.SpotifyClient {
-	return spotify.New(httpClient)
+	return NewSpotifyClient(spotify.New(httpClient))
 }
 
 type ExternalSpotifyAuthenticator interface {

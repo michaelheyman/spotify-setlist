@@ -132,7 +132,7 @@ func (c *CreatePlaylistCmd) PreRunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Fprintf(stdout, "logged in as user %s\n", user.ID)
+	fmt.Fprintf(stdout, "logged in as user %s\n", user)
 	c.service = application.NewPlaylistService(
 		infrastructure.NewSetlistFMService(
 			c.httpClient,
