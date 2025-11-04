@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/michaelheyman/spotify-setlist/internal/domain"
+	"golang.org/x/oauth2"
 )
 
 type SpotifyAuthHandler interface {
@@ -18,22 +19,44 @@ type spotifyAuthHandler struct {
 	spotify       domain.SpotifyClientFactory
 	auth          domain.SpotifyAuthenticator
 	state         string
+	tokenStore    domain.TokenStore
 	clientChan    chan domain.SpotifyClient
 	server        *http.Server
 	serverErrChan chan error
 }
 
-func NewSpotifyAuthHandler(spotify domain.SpotifyClientFactory, auth domain.SpotifyAuthenticator) SpotifyAuthHandler {
+func NewSpotifyAuthHandler(spotify domain.SpotifyClientFactory, auth domain.SpotifyAuthenticator, tokenStore domain.TokenStore) SpotifyAuthHandler {
 	return &spotifyAuthHandler{
 		spotify:       spotify,
 		auth:          auth,
 		state:         "abc123",
+		tokenStore:    tokenStore,
 		clientChan:    make(chan domain.SpotifyClient),
 		serverErrChan: make(chan error),
 	}
 }
 
 func (s *spotifyAuthHandler) StartAuthFlow(ctx context.Context) (string, error) {
+	token, err := s.tokenStore.LoadToken(ctx)
+	if err != nil {
+		return "", fmt.Errorf("loading token: %w", err)
+	}
+	if token != nil {
+		// Token was found
+		oauthToken := &oauth2.Token{
+			AccessToken:  token.AccessToken,
+			TokenType:    token.TokenType,
+			RefreshToken: token.RefreshToken,
+			Expiry:       token.Expiry,
+		}
+		client := s.spotify.NewClient(s.auth.Client(ctx, oauthToken))
+		// Return the client in a non blocking routine
+		go func() {
+			s.clientChan <- client
+		}()
+		return "", nil
+	}
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/callback", s.handleAuthCallback)
 	s.server = &http.Server{
@@ -61,6 +84,11 @@ func (s *spotifyAuthHandler) StartAuthFlow(ctx context.Context) (string, error) 
 func (s *spotifyAuthHandler) WaitForClient(ctx context.Context) (domain.SpotifyClient, error) {
 	select {
 	case client := <-s.clientChan:
+		// Server not present indicates the refresh token was retrieved
+		if s.server == nil {
+			return client, nil
+		}
+
 		// Auth completed successfully
 		if err := s.server.Shutdown(ctx); err != nil {
 			return nil, fmt.Errorf("shutting down server after successful auth: %w", err)
@@ -88,6 +116,17 @@ func (s *spotifyAuthHandler) handleAuthCallback(w http.ResponseWriter, r *http.R
 	}
 	if st := r.FormValue("state"); st != s.state {
 		http.Error(w, "OAuth state mismatch", http.StatusUnauthorized)
+		return
+	}
+
+	// Save new token
+	if err := s.tokenStore.SaveToken(ctx, &domain.SpotifyToken{
+		AccessToken:  token.AccessToken,
+		TokenType:    token.TokenType,
+		RefreshToken: token.RefreshToken,
+		Expiry:       token.Expiry,
+	}); err != nil {
+		http.Error(w, "Failed to save token", http.StatusInternalServerError)
 		return
 	}
 
