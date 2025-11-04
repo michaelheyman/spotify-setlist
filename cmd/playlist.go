@@ -11,7 +11,8 @@ import (
 	"github.com/cli/browser"
 	application "github.com/michaelheyman/spotify-setlist/internal/application/playlist"
 	"github.com/michaelheyman/spotify-setlist/internal/domain"
-	"github.com/michaelheyman/spotify-setlist/internal/infrastructure"
+	"github.com/michaelheyman/spotify-setlist/internal/infrastructure/setlistfm"
+	"github.com/michaelheyman/spotify-setlist/internal/infrastructure/spotify"
 	"github.com/michaelheyman/spotify-setlist/internal/interfaces"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -109,7 +110,7 @@ func (c *CreatePlaylistCmd) PreRunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	spotifyFactory := infrastructure.ExternalSpotifyClientFactory{}
+	spotifyFactory := spotify.ExternalSpotifyClientFactory{}
 	handler := interfaces.NewSpotifyAuthHandler(spotifyFactory, authenticator)
 
 	authURL, err := handler.StartAuthFlow(ctx)
@@ -134,11 +135,11 @@ func (c *CreatePlaylistCmd) PreRunE(cmd *cobra.Command, args []string) error {
 
 	fmt.Fprintf(stdout, "logged in as user %s\n", user)
 	c.service = application.NewPlaylistService(
-		infrastructure.NewSetlistFMService(
+		setlistfm.NewSetlistFMService(
 			c.httpClient,
 			apiKey,
 		),
-		infrastructure.NewSpotifyService(client),
+		spotify.NewSpotifyService(client),
 	)
 	return nil
 }

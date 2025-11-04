@@ -1,12 +1,12 @@
-package infrastructure_test
+package spotify_test
 
 import (
 	"context"
 	"net/http"
 	"testing"
 
-	"github.com/michaelheyman/spotify-setlist/internal/infrastructure"
 	"github.com/michaelheyman/spotify-setlist/internal/infrastructure/externalsdk/mocks"
+	"github.com/michaelheyman/spotify-setlist/internal/infrastructure/spotify"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"golang.org/x/oauth2"
@@ -37,7 +37,7 @@ func TestSpotifyAuth_AuthURL(t *testing.T) {
 			tt.setExpectations(a)
 			defer a.AssertExpectations(t)
 
-			auth := infrastructure.NewSpotifyAuth(a)
+			auth := spotify.NewSpotifyAuth(a)
 			url := auth.AuthURL(tt.state)
 
 			assert.Equal(t, tt.want, url)
@@ -103,7 +103,7 @@ func TestSpotifyAuth_Token(t *testing.T) {
 			tt.setExpectations(a)
 			defer a.AssertExpectations(t)
 
-			auth := infrastructure.NewSpotifyAuth(a)
+			auth := spotify.NewSpotifyAuth(a)
 			token, err := auth.Token(context.Background(), tt.state, tt.req)
 
 			tt.wantErr(t, err, "Token returned error")
@@ -145,7 +145,7 @@ func TestSpotifyAuth_Client(t *testing.T) {
 			tt.setExpectations(a)
 			defer a.AssertExpectations(t)
 
-			auth := infrastructure.NewSpotifyAuth(a)
+			auth := spotify.NewSpotifyAuth(a)
 			client := auth.Client(context.Background(), tt.token)
 
 			assert.Equal(t, tt.want, client)
