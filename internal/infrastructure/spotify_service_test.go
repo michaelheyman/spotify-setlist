@@ -2,26 +2,20 @@ package infrastructure
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/michaelheyman/spotify-setlist/internal/domain"
 	"github.com/michaelheyman/spotify-setlist/internal/domain/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/zmb3/spotify/v2"
 )
 
 func Test_spotifyService_CreatePlaylist(t *testing.T) {
-	defaultPlaylistVisibility := false
-	defaultPlaylistCollaborative := false
-
 	testdata := struct {
-		playlist                   domain.Playlist
-		spotifyUserID              string
-		spotifyPlaylistID          string
-		spotifySearchResultSuccess *spotify.SearchResult
-		createResult               domain.CreatePlaylistResult
+		playlist      domain.Playlist
+		spotifyUserID string
+		searchResult  domain.SpotifySearchResult
+		createResult  domain.CreatePlaylistResult
 	}{
 		playlist: domain.Playlist{
 			Name:        "playlist name",
@@ -29,8 +23,7 @@ func Test_spotifyService_CreatePlaylist(t *testing.T) {
 			Artist:      "artist name",
 			Songs:       []string{"first", "second", "third"},
 		},
-		spotifyUserID:     "example-user-id",
-		spotifyPlaylistID: "37i9dQZF1DWXRqgorJj26U",
+		spotifyUserID: "example-user-id",
 		createResult: domain.CreatePlaylistResult{
 			Playlist: domain.Playlist{
 				Name:        "playlist name",
@@ -39,23 +32,17 @@ func Test_spotifyService_CreatePlaylist(t *testing.T) {
 				Songs:       []string{"first", "second", "third"},
 			},
 		},
-		spotifySearchResultSuccess: &spotify.SearchResult{
-			Tracks: &spotify.FullTrackPage{
-				Tracks: []spotify.FullTrack{
-					{
-						SimpleTrack: spotify.SimpleTrack{
-							Name: "first",
-							ID:   "track-id",
-						},
-						Popularity: 50,
-					},
-					{
-						SimpleTrack: spotify.SimpleTrack{
-							Name: "first",
-							ID:   "track-id-but-most-popular",
-						},
-						Popularity: 80,
-					},
+		searchResult: domain.SpotifySearchResult{
+			Tracks: []domain.SpotifyTrack{
+				{
+					Name:       "first",
+					ID:         "track-id",
+					Popularity: 50,
+				},
+				{
+					Name:       "first",
+					ID:         "track-id-but-most-popular",
+					Popularity: 80,
 				},
 			},
 		},
@@ -74,46 +61,42 @@ func Test_spotifyService_CreatePlaylist(t *testing.T) {
 			playlist: testdata.playlist,
 			setExpectations: func(c *mocks.SpotifyClient) {
 				c.EXPECT().
-					Search(
+					SearchTrack(
 						mock.Anything,
+						testdata.playlist.Artist,
 						mock.Anything,
-						spotify.SearchType(spotify.SearchTypeTrack),
 					).
-					Return(testdata.spotifySearchResultSuccess, nil).
+					Return(testdata.searchResult, nil).
 					Times(len(testdata.playlist.Songs))
 				c.EXPECT().
 					CurrentUser(mock.Anything).
-					Return(
-						&spotify.PrivateUser{
-							User: spotify.User{
-								ID: testdata.spotifyUserID,
-							},
-						}, nil,
-					)
+					Return(testdata.spotifyUserID, nil)
 				c.EXPECT().
-					CreatePlaylistForUser(
+					CreatePlaylist(
 						mock.Anything,
 						testdata.spotifyUserID,
-						testdata.playlist.Name,
-						testdata.playlist.Description,
-						defaultPlaylistVisibility,
-						defaultPlaylistCollaborative,
-					).
-					Return(
-						&spotify.FullPlaylist{
-							SimplePlaylist: spotify.SimplePlaylist{
-								ID: spotify.ID(testdata.spotifyPlaylistID),
+						domain.SpotifyPlaylist{
+							Playlist: testdata.playlist,
+							Tracks: []domain.SpotifyTrack{
+								{
+									Name:       "first",
+									ID:         "track-id",
+									Popularity: 50,
+								},
+								{
+									Name:       "first",
+									ID:         "track-id",
+									Popularity: 50,
+								},
+								{
+									Name:       "first",
+									ID:         "track-id",
+									Popularity: 50,
+								},
 							},
 						},
-						nil,
-					)
-				c.EXPECT().
-					AddTracksToPlaylist(
-						mock.Anything,
-						spotify.ID(testdata.spotifyPlaylistID),
-						mock.Anything,
 					).
-					Return("some-snapshot-id", nil)
+					Return(nil)
 			},
 			want:    testdata.createResult,
 			wantErr: assert.NoError,
@@ -126,50 +109,42 @@ func Test_spotifyService_CreatePlaylist(t *testing.T) {
 			},
 			setExpectations: func(c *mocks.SpotifyClient) {
 				c.EXPECT().
-					Search(
+					SearchTrack(
 						mock.Anything,
+						testdata.playlist.Artist,
 						mock.Anything,
-						spotify.SearchType(spotify.SearchTypeTrack),
 					).
-					Return(testdata.spotifySearchResultSuccess, nil).
+					Return(testdata.searchResult, nil).
 					Times(len(testdata.playlist.Songs))
 				c.EXPECT().
 					CurrentUser(mock.Anything).
-					Return(
-						&spotify.PrivateUser{
-							User: spotify.User{
-								ID: testdata.spotifyUserID,
-							},
-						}, nil,
-					)
+					Return(testdata.spotifyUserID, nil)
 				c.EXPECT().
-					CreatePlaylistForUser(
+					CreatePlaylist(
 						mock.Anything,
 						testdata.spotifyUserID,
-						testdata.playlist.Name,
-						testdata.playlist.Description,
-						defaultPlaylistVisibility,
-						defaultPlaylistCollaborative,
-					).
-					Return(
-						&spotify.FullPlaylist{
-							SimplePlaylist: spotify.SimplePlaylist{
-								ID: spotify.ID(testdata.spotifyPlaylistID),
+						domain.SpotifyPlaylist{
+							Playlist: testdata.playlist,
+							Tracks: []domain.SpotifyTrack{
+								{
+									Name:       "first",
+									ID:         "track-id-but-most-popular",
+									Popularity: 80,
+								},
+								{
+									Name:       "first",
+									ID:         "track-id-but-most-popular",
+									Popularity: 80,
+								},
+								{
+									Name:       "first",
+									ID:         "track-id-but-most-popular",
+									Popularity: 80,
+								},
 							},
 						},
-						nil,
-					)
-				c.EXPECT().
-					AddTracksToPlaylist(
-						mock.Anything,
-						spotify.ID(testdata.spotifyPlaylistID),
-						[]spotify.ID{
-							"track-id-but-most-popular",
-							"track-id-but-most-popular",
-							"track-id-but-most-popular",
-						},
 					).
-					Return("some-snapshot-id", nil)
+					Return(nil)
 			},
 			want:    testdata.createResult,
 			wantErr: assert.NoError,
@@ -183,46 +158,44 @@ func Test_spotifyService_CreatePlaylist(t *testing.T) {
 			},
 			setExpectations: func(c *mocks.SpotifyClient) {
 				c.EXPECT().
-					Search(
+					SearchTrack(
 						mock.Anything,
+						testdata.playlist.Artist,
 						mock.Anything,
-						spotify.SearchType(spotify.SearchTypeTrack),
 					).
-					Return(testdata.spotifySearchResultSuccess, nil).
+					Return(testdata.searchResult, nil).
 					Times(len(testdata.playlist.Songs))
 				c.EXPECT().
 					CurrentUser(mock.Anything).
-					Return(
-						&spotify.PrivateUser{
-							User: spotify.User{
-								ID: testdata.spotifyUserID,
-							},
-						}, nil,
-					)
+					Return(testdata.spotifyUserID, nil)
 				c.EXPECT().
-					CreatePlaylistForUser(
+					CreatePlaylist(
 						mock.Anything,
 						testdata.spotifyUserID,
-						testdata.playlist.Name,
-						testdata.playlist.Description,
-						true,
-						true,
-					).
-					Return(
-						&spotify.FullPlaylist{
-							SimplePlaylist: spotify.SimplePlaylist{
-								ID: spotify.ID(testdata.spotifyPlaylistID),
+						domain.SpotifyPlaylist{
+							Playlist: testdata.playlist,
+							Tracks: []domain.SpotifyTrack{
+								{
+									Name:       "first",
+									ID:         "track-id",
+									Popularity: 50,
+								},
+								{
+									Name:       "first",
+									ID:         "track-id",
+									Popularity: 50,
+								},
+								{
+									Name:       "first",
+									ID:         "track-id",
+									Popularity: 50,
+								},
 							},
+							Public:        true,
+							Collaborative: true,
 						},
-						nil,
-					)
-				c.EXPECT().
-					AddTracksToPlaylist(
-						mock.Anything,
-						spotify.ID(testdata.spotifyPlaylistID),
-						mock.Anything,
 					).
-					Return("some-snapshot-id", nil)
+					Return(nil)
 			},
 			want:    testdata.createResult,
 			wantErr: assert.NoError,
@@ -231,14 +204,13 @@ func Test_spotifyService_CreatePlaylist(t *testing.T) {
 			name:     "should return error when spotify search for track fails",
 			playlist: testdata.playlist,
 			setExpectations: func(c *mocks.SpotifyClient) {
-				query := fmt.Sprintf(`track:"%s" artist:"%s"`, "first", testdata.playlist.Artist)
 				c.EXPECT().
-					Search(
+					SearchTrack(
 						mock.Anything,
-						query,
-						spotify.SearchType(spotify.SearchTypeTrack),
+						testdata.playlist.Artist,
+						mock.Anything,
 					).
-					Return(nil, assert.AnError)
+					Return(domain.SpotifySearchResult{}, assert.AnError)
 			},
 			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
 				return assert.ErrorContains(t, err, "getting track IDs: searching for song 'first'") &&
@@ -254,43 +226,13 @@ func Test_spotifyService_CreatePlaylist(t *testing.T) {
 				Songs:       []string{"first"},
 			},
 			setExpectations: func(c *mocks.SpotifyClient) {
-				query := fmt.Sprintf(`track:"%s" artist:"%s"`, "first", testdata.playlist.Artist)
 				c.EXPECT().
-					Search(
+					SearchTrack(
 						mock.Anything,
-						query,
-						spotify.SearchType(spotify.SearchTypeTrack),
-					).
-					Return(&spotify.SearchResult{}, nil)
-			},
-			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
-				return assert.Equal(t, err.Error(), "getting track IDs: no tracks found")
-			},
-		},
-		{
-			name: "should return error when spotify search for track returns empty tracks",
-			playlist: domain.Playlist{
-				Name:        "playlist name",
-				Description: "playlist description",
-				Artist:      "artist name",
-				Songs:       []string{"first"},
-			},
-			setExpectations: func(c *mocks.SpotifyClient) {
-				query := fmt.Sprintf(`track:"%s" artist:"%s"`, "first", testdata.playlist.Artist)
-				c.EXPECT().
-					Search(
+						testdata.playlist.Artist,
 						mock.Anything,
-						query,
-						spotify.SearchType(spotify.SearchTypeTrack),
 					).
-					Return(
-						&spotify.SearchResult{
-							Tracks: &spotify.FullTrackPage{
-								Tracks: []spotify.FullTrack{},
-							},
-						},
-						nil,
-					)
+					Return(domain.SpotifySearchResult{}, nil)
 			},
 			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
 				return assert.Equal(t, err.Error(), "getting track IDs: no tracks found")
@@ -301,16 +243,16 @@ func Test_spotifyService_CreatePlaylist(t *testing.T) {
 			playlist: testdata.playlist,
 			setExpectations: func(c *mocks.SpotifyClient) {
 				c.EXPECT().
-					Search(
+					SearchTrack(
 						mock.Anything,
+						testdata.playlist.Artist,
 						mock.Anything,
-						spotify.SearchType(spotify.SearchTypeTrack),
 					).
-					Return(testdata.spotifySearchResultSuccess, nil).
+					Return(testdata.searchResult, nil).
 					Times(len(testdata.playlist.Songs))
 				c.EXPECT().
 					CurrentUser(mock.Anything).
-					Return(nil, assert.AnError)
+					Return("", assert.AnError)
 			},
 			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
 				return assert.ErrorContains(t, err, "creating playlist: getting current user: ") &&
@@ -322,86 +264,45 @@ func Test_spotifyService_CreatePlaylist(t *testing.T) {
 			playlist: testdata.playlist,
 			setExpectations: func(c *mocks.SpotifyClient) {
 				c.EXPECT().
-					Search(
+					SearchTrack(
 						mock.Anything,
+						testdata.playlist.Artist,
 						mock.Anything,
-						spotify.SearchType(spotify.SearchTypeTrack),
 					).
-					Return(testdata.spotifySearchResultSuccess, nil).
+					Return(testdata.searchResult, nil).
 					Times(len(testdata.playlist.Songs))
 				c.EXPECT().
 					CurrentUser(mock.Anything).
-					Return(
-						&spotify.PrivateUser{
-							User: spotify.User{
-								ID: testdata.spotifyUserID,
-							},
-						}, nil,
-					)
+					Return(testdata.spotifyUserID, nil)
 				c.EXPECT().
-					CreatePlaylistForUser(
+					CreatePlaylist(
 						mock.Anything,
 						testdata.spotifyUserID,
-						testdata.playlist.Name,
-						testdata.playlist.Description,
-						defaultPlaylistVisibility,
-						defaultPlaylistCollaborative,
-					).
-					Return(nil, assert.AnError)
-			},
-			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
-				return assert.ErrorContains(t, err, "creating playlist: creating: ") &&
-					assert.ErrorIs(t, err, assert.AnError)
-			},
-		},
-		{
-			name:     "should return error when spotify add tracks to playlist fails",
-			playlist: testdata.playlist,
-			setExpectations: func(c *mocks.SpotifyClient) {
-				c.EXPECT().
-					Search(
-						mock.Anything,
-						mock.Anything,
-						spotify.SearchType(spotify.SearchTypeTrack),
-					).
-					Return(testdata.spotifySearchResultSuccess, nil).
-					Times(len(testdata.playlist.Songs))
-				c.EXPECT().
-					CurrentUser(mock.Anything).
-					Return(
-						&spotify.PrivateUser{
-							User: spotify.User{
-								ID: testdata.spotifyUserID,
-							},
-						}, nil,
-					)
-				c.EXPECT().
-					CreatePlaylistForUser(
-						mock.Anything,
-						testdata.spotifyUserID,
-						testdata.playlist.Name,
-						testdata.playlist.Description,
-						defaultPlaylistVisibility,
-						defaultPlaylistCollaborative,
-					).
-					Return(
-						&spotify.FullPlaylist{
-							SimplePlaylist: spotify.SimplePlaylist{
-								ID: spotify.ID(testdata.spotifyPlaylistID),
+						domain.SpotifyPlaylist{
+							Playlist: testdata.playlist,
+							Tracks: []domain.SpotifyTrack{
+								{
+									Name:       "first",
+									ID:         "track-id",
+									Popularity: 50,
+								},
+								{
+									Name:       "first",
+									ID:         "track-id",
+									Popularity: 50,
+								},
+								{
+									Name:       "first",
+									ID:         "track-id",
+									Popularity: 50,
+								},
 							},
 						},
-						nil,
-					)
-				c.EXPECT().
-					AddTracksToPlaylist(
-						mock.Anything,
-						spotify.ID(testdata.spotifyPlaylistID),
-						mock.Anything,
 					).
-					Return("", assert.AnError)
+					Return(assert.AnError)
 			},
 			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
-				return assert.ErrorContains(t, err, "creating playlist: adding tracks: ") &&
+				return assert.ErrorContains(t, err, "creating playlist: spotify client: ") &&
 					assert.ErrorIs(t, err, assert.AnError)
 			},
 		},
