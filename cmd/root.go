@@ -18,6 +18,7 @@ var cfgFile string
 
 type Dependencies struct {
 	AuthFactory domain.AuthenticationFactory
+	TokenStore  domain.TokenStore
 	HttpClient  *http.Client
 }
 
@@ -45,7 +46,7 @@ to quickly create a Cobra application.`,
 	cmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	cmd.PersistentFlags().BoolP("verbose", "v", false, "Verbose output")
 
-	cmd.AddCommand(NewCreatePlaylistCmd(deps.AuthFactory, deps.HttpClient))
+	cmd.AddCommand(NewCreatePlaylistCmd(deps.AuthFactory, deps.HttpClient, deps.TokenStore))
 
 	return cmd
 }

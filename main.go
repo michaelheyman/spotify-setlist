@@ -5,6 +5,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -16,8 +17,15 @@ import (
 func main() {
 	ctx := context.Background()
 
+	tokenStore, err := spotify.NewFileTokenStore()
+	if err != nil {
+		fmt.Printf("creating file token store: %v", err)
+		os.Exit(1)
+	}
+
 	deps := &cmd.Dependencies{
 		AuthFactory: spotify.NewSpotifyAuthFactory(),
+		TokenStore:  tokenStore,
 		HttpClient:  &http.Client{Timeout: 15 * time.Second},
 	}
 
