@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/michaelheyman/spotify-setlist/internal/domain"
-	spotify "github.com/zmb3/spotify/v2"
 )
 
 type spotifyService struct {
@@ -29,12 +28,12 @@ func (s spotifyService) CreatePlaylist(ctx context.Context, playlist domain.Play
 		opt(&options)
 	}
 
-	trackIDs, missingSongs, err := s.findTracks(ctx, playlist.Artist, playlist.Songs, options.MostPopularTrack)
+	tracks, missingSongs, err := s.findTracks(ctx, playlist.Artist, playlist.Songs, options.MostPopularTrack)
 	if err != nil {
 		return domain.CreatePlaylistResult{}, fmt.Errorf("getting track IDs: %w", err)
 	}
 
-	if err := s.createPlaylist(ctx, playlist, trackIDs, options.Visibility, options.Collaborative); err != nil {
+	if err := s.createPlaylist(ctx, playlist, tracks, options.Visibility, options.Collaborative); err != nil {
 		return domain.CreatePlaylistResult{}, fmt.Errorf("creating playlist: %w", err)
 	}
 	return domain.CreatePlaylistResult{
@@ -43,77 +42,74 @@ func (s spotifyService) CreatePlaylist(ctx context.Context, playlist domain.Play
 	}, nil
 }
 
-func (s spotifyService) findTracks(ctx context.Context, artist string, songs []string, mostPopular bool) ([]spotify.ID, []string, error) {
-	var trackIDs []spotify.ID
+func (s spotifyService) findTracks(ctx context.Context, artist string, songs []string, mostPopular bool) ([]domain.SpotifyTrack, []string, error) {
+	var tracks []domain.SpotifyTrack
 	var missing []string
 
 	for _, song := range songs {
-		query := fmt.Sprintf(`track:"%s" artist:"%s"`, song, artist)
-		result, err := s.client.Search(ctx, query, spotify.SearchTypeTrack)
+		result, err := s.client.SearchTrack(ctx, artist, song)
 		if err != nil {
 			return nil, nil, fmt.Errorf("searching for song '%s': %w", song, err)
 		}
 
-		if result.Tracks == nil || len(result.Tracks.Tracks) == 0 {
+		if len(result.Tracks) == 0 {
 			missing = append(missing, song)
 			continue
 		}
 
-		trackID, err := extractTrackID(result.Tracks.Tracks, mostPopular)
+		track, err := extractTrack(result.Tracks, mostPopular)
 		if err != nil {
 			return nil, nil, fmt.Errorf("extracting track ID from search result: %w", err)
 		}
-		trackIDs = append(trackIDs, trackID)
+		tracks = append(tracks, track)
 	}
 
-	if len(trackIDs) == 0 {
+	if len(tracks) == 0 {
 		return nil, nil, errors.New("no tracks found")
 	}
 
-	return trackIDs, missing, nil
+	return tracks, missing, nil
 }
 
 func (s spotifyService) createPlaylist(
 	ctx context.Context,
 	playlist domain.Playlist,
-	trackIDs []spotify.ID,
+	tracks []domain.SpotifyTrack,
 	visibility bool,
 	collaborative bool,
 ) error {
-	user, err := s.client.CurrentUser(ctx)
+	userID, err := s.client.CurrentUser(ctx)
 	if err != nil {
 		return fmt.Errorf("getting current user: %w", err)
 	}
 
-	newPlaylist, err := s.client.CreatePlaylistForUser(
-		ctx,
-		user.ID,
-		playlist.Name,
-		playlist.Description,
-		visibility,
-		collaborative,
-	)
-	if err != nil {
-		return fmt.Errorf("creating: %w", err)
+	pl := domain.SpotifyPlaylist{
+		Playlist:      playlist,
+		Tracks:        tracks,
+		Public:        visibility,
+		Collaborative: collaborative,
 	}
-
-	if _, err := s.client.AddTracksToPlaylist(ctx, newPlaylist.ID, trackIDs...); err != nil {
-		return fmt.Errorf("adding tracks: %w", err)
+	if err := s.client.CreatePlaylist(
+		ctx,
+		userID,
+		pl,
+	); err != nil {
+		return fmt.Errorf("spotify client: %w", err)
 	}
 
 	return nil
 }
 
-func extractTrackID(tracks []spotify.FullTrack, mostPopular bool) (spotify.ID, error) {
+func extractTrack(tracks []domain.SpotifyTrack, mostPopular bool) (domain.SpotifyTrack, error) {
 	if len(tracks) == 0 {
-		return "", errors.New("no tracks found")
+		return domain.SpotifyTrack{}, errors.New("no tracks found")
 	}
 
 	if !mostPopular {
-		return tracks[0].ID, nil
+		return tracks[0], nil
 	}
 
-	var highestPopularity spotify.Numeric
+	var highestPopularity int
 	var mostPopularIndex int
 
 	for i, track := range tracks {
@@ -123,5 +119,5 @@ func extractTrackID(tracks []spotify.FullTrack, mostPopular bool) (spotify.ID, e
 		}
 	}
 
-	return tracks[mostPopularIndex].ID, nil
+	return tracks[mostPopularIndex], nil
 }

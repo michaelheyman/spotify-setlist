@@ -21,3 +21,4 @@ packages:
   github.com/michaelheyman/spotify-setlist/internal/infrastructure:
     config:
       all: true
+      recursive: true

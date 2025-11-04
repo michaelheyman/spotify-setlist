@@ -22,7 +22,6 @@ tasks:
 
   mocks.remove:
     desc: remove all mock files
-    # platforms: ["darwin", "linux"]
     cmds:
       - find . -name '*mock.gen.go' | xargs -r rm
       - find ./internal -type d -name "*mocks" | xargs -r rm -rf
@@ -34,7 +33,7 @@ tasks:
 
   test:
     cmds:
-      - go run gotest.tools/gotestsum --format testname -- -v -coverprofile=coverage.txt ./internal/...
+      - go run gotest.tools/gotestsum@latest --format testdox -- -v -coverprofile=coverage.txt $(go list ./... | grep -v /mocks)
     desc: run unit tests
     generates:
       - coverage.txt
