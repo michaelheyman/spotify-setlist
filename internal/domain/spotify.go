@@ -3,6 +3,7 @@ package domain
 import (
 	"context"
 	"net/http"
+	"time"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"golang.org/x/oauth2"
@@ -26,6 +27,11 @@ type SpotifyAuthenticator interface {
 
 type AuthenticationFactory interface {
 	CreateAuthenticator(ctx context.Context, config SpotifyAuthConfig) (SpotifyAuthenticator, error)
+}
+
+type TokenStore interface {
+	SaveToken(ctx context.Context, token *SpotifyToken) error
+	LoadToken(ctx context.Context) (*SpotifyToken, error)
 }
 
 type SpotifyAuthConfig struct {
@@ -60,4 +66,15 @@ type SpotifyTrack struct {
 	Name       string
 	ID         string
 	Popularity int
+}
+
+type SpotifyToken struct {
+	AccessToken  string    `json:"access_token"`
+	TokenType    string    `json:"token_type"`
+	RefreshToken string    `json:"refresh_token"`
+	Expiry       time.Time `json:"expiry"`
+}
+
+func (t SpotifyToken) IsExpired() bool {
+	return t.Expiry.Before(time.Now())
 }
