@@ -10,14 +10,14 @@ import (
 	"time"
 
 	"github.com/michaelheyman/spotify-setlist/cmd"
-	"github.com/michaelheyman/spotify-setlist/internal/infrastructure"
+	"github.com/michaelheyman/spotify-setlist/internal/infrastructure/spotify"
 )
 
 func main() {
 	ctx := context.Background()
 
 	deps := &cmd.Dependencies{
-		AuthFactory: infrastructure.NewSpotifyAuthFactory(),
+		AuthFactory: spotify.NewSpotifyAuthFactory(),
 		HttpClient:  &http.Client{Timeout: 15 * time.Second},
 	}
 
