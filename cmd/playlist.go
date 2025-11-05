@@ -26,7 +26,11 @@ type CreatePlaylistCmd struct {
 	tokenStore  domain.TokenStore
 }
 
-func NewCreatePlaylistCmd(authFactory domain.AuthenticationFactory, httpClient *http.Client, tokenStore domain.TokenStore) *cobra.Command {
+func NewCreatePlaylistCmd(
+	authFactory domain.AuthenticationFactory,
+	httpClient *http.Client,
+	tokenStore domain.TokenStore,
+) *cobra.Command {
 	createCmd := CreatePlaylistCmd{
 		authFactory: authFactory,
 		httpClient:  httpClient,
@@ -62,7 +66,8 @@ to quickly create a Cobra application.`,
 	// Optional flags
 	cmd.Flags().String("spotify-client-id", "", "Spotify client ID (env: SPOTIFY_CLIENT_ID)")
 	cmd.Flags().String("spotify-client-secret", "", "Spotify client secret (env: SPOTIFY_CLIENT_SECRET)")
-	cmd.Flags().String("spotify-redirect-uri", "http://localhost:8080/callback", "Spotify redirect URI (env: SPOTIFY_REDIRECT_URI)")
+	cmd.Flags().
+		String("spotify-redirect-uri", "http://localhost:8080/callback", "Spotify redirect URI (env: SPOTIFY_REDIRECT_URI)")
 	cmd.Flags().String("setlistfm-api-key", "", "Setlist.fm API key (env: SETLIST_FM_API_KEY)")
 
 	// Bind flags to viper keys for later lookups
@@ -148,6 +153,7 @@ func (c *CreatePlaylistCmd) PreRunE(cmd *cobra.Command, args []string) error {
 	)
 	return nil
 }
+
 func (c *CreatePlaylistCmd) RunE(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 

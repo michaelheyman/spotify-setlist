@@ -123,7 +123,11 @@ func TestSetlistFMService_GetSetlists(t *testing.T) {
 				}
 			},
 			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
-				return assert.ErrorContains(t, err, fmt.Sprintf("getting artist mbid: no artist found for name: %s", testdata.artist))
+				return assert.ErrorContains(
+					t,
+					err,
+					fmt.Sprintf("getting artist mbid: no artist found for name: %s", testdata.artist),
+				)
 			},
 		},
 		{

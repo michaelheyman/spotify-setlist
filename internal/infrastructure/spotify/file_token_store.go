@@ -13,8 +13,8 @@ import (
 const (
 	directory = ".spotify-setlist"
 	tokenFile = "token.json"
-	userRWX   = 0700
-	userRW    = 0600
+	userRWX   = 0o700
+	userRW    = 0o600
 )
 
 type FileTokenStore struct {

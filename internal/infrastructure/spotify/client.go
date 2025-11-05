@@ -19,7 +19,14 @@ func NewSpotifyClient(client externalsdk.SpotifyClient) *SpotifyClient {
 	}
 }
 
-func (c SpotifyClient) CreatePlaylistForUser(ctx context.Context, user string, tracks []domain.SpotifyTrack, playlistName, description string, public bool, collaborative bool) error {
+func (c SpotifyClient) CreatePlaylistForUser(
+	ctx context.Context,
+	user string,
+	tracks []domain.SpotifyTrack,
+	playlistName, description string,
+	public bool,
+	collaborative bool,
+) error {
 	newPlaylist, err := c.client.CreatePlaylistForUser(
 		ctx,
 		user,

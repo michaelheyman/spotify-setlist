@@ -50,7 +50,11 @@ func NewSetlistFMService(client *http.Client, apiKey string, opts ...Option) Set
 	}
 }
 
-func (s setlistFMService) GetSetlists(ctx context.Context, artist string, opts ...domain.GetSetlistOption) ([]domain.Setlist, error) {
+func (s setlistFMService) GetSetlists(
+	ctx context.Context,
+	artist string,
+	opts ...domain.GetSetlistOption,
+) ([]domain.Setlist, error) {
 	// Get the artist mbid (Musicbrainz MBID) from the Setlist.fm API
 	mbid, err := s.getArtistMBID(ctx, artist)
 	if err != nil {
@@ -112,7 +116,12 @@ func defaultOpts() Options {
 
 // getArtistSetlists retrieves the setlists for an artist's MBID
 func (s setlistFMService) getArtistSetlists(ctx context.Context, mbid string) ([]domain.Setlist, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/artist/%s/setlists", s.baseURL, mbid), nil)
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodGet,
+		fmt.Sprintf("%s/artist/%s/setlists", s.baseURL, mbid),
+		nil,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("creating request: %w", err)
 	}

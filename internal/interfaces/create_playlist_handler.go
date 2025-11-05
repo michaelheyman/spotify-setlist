@@ -33,7 +33,10 @@ func NewCreatePlaylistHandler(playlist application.PlaylistService) CreatePlayli
 	}
 }
 
-func (h createPlaylistHandler) CreatePlaylist(ctx context.Context, req CreatePlaylistRequest) (*CreatePlaylistResponse, error) {
+func (h createPlaylistHandler) CreatePlaylist(
+	ctx context.Context,
+	req CreatePlaylistRequest,
+) (*CreatePlaylistResponse, error) {
 	result, err := h.playlist.CreatePlaylist(ctx, application.CreatePlaylistParams{
 		Artist:                  req.Artist,
 		MinimumSetlistSongCount: req.MinSongs,

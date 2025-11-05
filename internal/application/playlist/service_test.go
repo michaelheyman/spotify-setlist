@@ -23,7 +23,6 @@ func Test_playlistService_CreatePlaylist(t *testing.T) {
 		},
 		setlists: []domain.Setlist{
 			{
-
 				Artist:    "artist name",
 				Songs:     []string{"foo", "bar", "baz"},
 				Venue:     "the venue",

@@ -25,7 +25,11 @@ type spotifyAuthHandler struct {
 	serverErrChan chan error
 }
 
-func NewSpotifyAuthHandler(spotify domain.SpotifyClientFactory, auth domain.SpotifyAuthenticator, tokenStore domain.TokenStore) SpotifyAuthHandler {
+func NewSpotifyAuthHandler(
+	spotify domain.SpotifyClientFactory,
+	auth domain.SpotifyAuthenticator,
+	tokenStore domain.TokenStore,
+) SpotifyAuthHandler {
 	return &spotifyAuthHandler{
 		spotify:       spotify,
 		auth:          auth,
