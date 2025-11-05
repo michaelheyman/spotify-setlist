@@ -26,7 +26,7 @@ func main() {
 	deps := &cmd.Dependencies{
 		AuthFactory: spotify.NewSpotifyAuthFactory(),
 		TokenStore:  tokenStore,
-		HttpClient:  &http.Client{Timeout: 15 * time.Second},
+		HTTPClient:  &http.Client{Timeout: 15 * time.Second},
 	}
 
 	rootCmd := cmd.NewRootCmd(deps)

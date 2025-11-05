@@ -49,8 +49,8 @@ func TestCreatePlaylistCmd_Execute(t *testing.T) {
 				"SPOTIFY_REDIRECT_URI":  testdata.redirectURI,
 				"SETLIST_FM_API_KEY":    testdata.apiKey,
 			},
-			setExpectations: func(_ *mocks.AuthenticationFactory, t *mocks.TokenStore) {},
-			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
+			setExpectations: func(_ *mocks.AuthenticationFactory, _ *mocks.TokenStore) {},
+			wantErr: func(_ assert.TestingT, err error, _ ...any) bool {
 				assert.EqualError(t, err, "missing Spotify client ID")
 				return true
 			},
@@ -63,8 +63,8 @@ func TestCreatePlaylistCmd_Execute(t *testing.T) {
 				"SPOTIFY_REDIRECT_URI": testdata.redirectURI,
 				"SETLIST_FM_API_KEY":   testdata.apiKey,
 			},
-			setExpectations: func(_ *mocks.AuthenticationFactory, t *mocks.TokenStore) {},
-			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
+			setExpectations: func(_ *mocks.AuthenticationFactory, _ *mocks.TokenStore) {},
+			wantErr: func(_ assert.TestingT, err error, _ ...any) bool {
 				assert.EqualError(t, err, "missing Spotify client secret")
 				return true
 			},
@@ -77,8 +77,8 @@ func TestCreatePlaylistCmd_Execute(t *testing.T) {
 				"SPOTIFY_CLIENT_SECRET": testdata.clientSecret,
 				"SPOTIFY_REDIRECT_URI":  testdata.redirectURI,
 			},
-			setExpectations: func(_ *mocks.AuthenticationFactory, t *mocks.TokenStore) {},
-			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
+			setExpectations: func(_ *mocks.AuthenticationFactory, _ *mocks.TokenStore) {},
+			wantErr: func(_ assert.TestingT, err error, _ ...any) bool {
 				assert.EqualError(t, err, "missing Setlist.FM API key")
 				return true
 			},
@@ -87,7 +87,7 @@ func TestCreatePlaylistCmd_Execute(t *testing.T) {
 			name: "should return error when authenticator fails to create",
 			args: []string{"create-playlist", "--artist", "The Beatles"},
 			env:  validEnv,
-			setExpectations: func(f *mocks.AuthenticationFactory, t *mocks.TokenStore) {
+			setExpectations: func(f *mocks.AuthenticationFactory, _ *mocks.TokenStore) {
 				f.EXPECT().
 					CreateAuthenticator(
 						mock.Anything,
@@ -105,8 +105,8 @@ func TestCreatePlaylistCmd_Execute(t *testing.T) {
 					).
 					Return(nil, assert.AnError)
 			},
-			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
-				assert.ErrorIs(t, err, assert.AnError)
+			wantErr: func(_ assert.TestingT, err error, _ ...any) bool {
+				require.ErrorIs(t, err, assert.AnError)
 				assert.EqualError(t, err, assert.AnError.Error())
 				return true
 			},

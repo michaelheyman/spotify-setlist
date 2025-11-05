@@ -44,7 +44,7 @@ func TestSetlistFMService_GetSetlists(t *testing.T) {
 			handler: func(w http.ResponseWriter, r *http.Request) {
 				if strings.Contains(r.URL.Path, "/search/artists") {
 					w.WriteHeader(http.StatusOK)
-					w.Write([]byte(testdata.searchArtistsSuccess))
+					w.Write(testdata.searchArtistsSuccess)
 				}
 				var res searchArtistResponse
 				if err := json.Unmarshal(testdata.searchArtistsSuccess, &res); err != nil {
@@ -53,7 +53,7 @@ func TestSetlistFMService_GetSetlists(t *testing.T) {
 				mbid := res.Artist[0].Mbid
 				if strings.Contains(r.URL.Path, fmt.Sprintf("/artist/%s/setlists", mbid)) {
 					w.WriteHeader(http.StatusOK)
-					w.Write([]byte(testdata.artistSetlistsSuccess))
+					w.Write(testdata.artistSetlistsSuccess)
 				}
 			},
 			want: []domain.Setlist{
@@ -108,7 +108,7 @@ func TestSetlistFMService_GetSetlists(t *testing.T) {
 					w.WriteHeader(http.StatusNotFound)
 				}
 			},
-			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
+			wantErr: func(_ assert.TestingT, err error, _ ...any) bool {
 				return assert.ErrorContains(t, err, "request failed with status 404")
 			},
 		},
@@ -122,8 +122,12 @@ func TestSetlistFMService_GetSetlists(t *testing.T) {
 					w.Write([]byte(`{}`))
 				}
 			},
-			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
-				return assert.ErrorContains(t, err, fmt.Sprintf("getting artist mbid: no artist found for name: %s", testdata.artist))
+			wantErr: func(_ assert.TestingT, err error, _ ...any) bool {
+				return assert.ErrorContains(
+					t,
+					err,
+					fmt.Sprintf("getting artist mbid: no artist found for name: %s", testdata.artist),
+				)
 			},
 		},
 		{
@@ -133,7 +137,7 @@ func TestSetlistFMService_GetSetlists(t *testing.T) {
 			handler: func(w http.ResponseWriter, r *http.Request) {
 				if strings.Contains(r.URL.Path, "/search/artists") {
 					w.WriteHeader(http.StatusOK)
-					w.Write([]byte(testdata.searchArtistsSuccess))
+					w.Write(testdata.searchArtistsSuccess)
 				}
 				var res searchArtistResponse
 				if err := json.Unmarshal(testdata.searchArtistsSuccess, &res); err != nil {
@@ -144,7 +148,7 @@ func TestSetlistFMService_GetSetlists(t *testing.T) {
 					w.WriteHeader(http.StatusNotFound)
 				}
 			},
-			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
+			wantErr: func(_ assert.TestingT, err error, _ ...any) bool {
 				return assert.ErrorContains(t, err, "request failed with status 404")
 			},
 		},
@@ -153,7 +157,7 @@ func TestSetlistFMService_GetSetlists(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				assert.Equal(t, r.Header.Get(apiKeyHeader), tt.apiKey, "api key header doesn't match submitted api key")
-				assert.Equal(t, r.Header.Get("Accept"), "application/json")
+				assert.Equal(t, "application/json", r.Header.Get("Accept"))
 				tt.handler(w, r)
 			}))
 			defer server.Close()

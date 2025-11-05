@@ -9,6 +9,7 @@ import (
 	"github.com/michaelheyman/spotify-setlist/internal/infrastructure/spotify"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
 )
 
@@ -90,8 +91,8 @@ func TestSpotifyAuth_Token(t *testing.T) {
 					).
 					Return(nil, assert.AnError)
 			},
-			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
-				assert.ErrorIs(t, err, assert.AnError)
+			wantErr: func(_ assert.TestingT, err error, _ ...any) bool {
+				require.ErrorIs(t, err, assert.AnError)
 				assert.EqualError(t, err, assert.AnError.Error())
 				return true
 			},

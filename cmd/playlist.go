@@ -1,6 +1,3 @@
-/*
-Copyright © 2025 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
@@ -19,6 +16,8 @@ import (
 	spotifyauth "github.com/zmb3/spotify/v2/auth"
 )
 
+const defaultMinSongs = 5
+
 type CreatePlaylistCmd struct {
 	authFactory domain.AuthenticationFactory
 	httpClient  *http.Client
@@ -26,7 +25,11 @@ type CreatePlaylistCmd struct {
 	tokenStore  domain.TokenStore
 }
 
-func NewCreatePlaylistCmd(authFactory domain.AuthenticationFactory, httpClient *http.Client, tokenStore domain.TokenStore) *cobra.Command {
+func NewCreatePlaylistCmd(
+	authFactory domain.AuthenticationFactory,
+	httpClient *http.Client,
+	tokenStore domain.TokenStore,
+) *cobra.Command {
 	createCmd := CreatePlaylistCmd{
 		authFactory: authFactory,
 		httpClient:  httpClient,
@@ -48,34 +51,36 @@ to quickly create a Cobra application.`,
 
 	// Required flags
 	cmd.Flags().StringP("artist", "a", "", "Specify the artist that the setlist playlist will be created for")
-	cmd.Flags().IntP("min-songs", "m", 5, "Sets the minimum number of songs a setlist needs to be included")
+	cmd.Flags().
+		IntP("min-songs", "m", defaultMinSongs, "Sets the minimum number of songs a setlist needs to be included")
 
 	viper.SetEnvPrefix("")
 	viper.AutomaticEnv() // Read environment variables
 
 	// Environment variables to look for
-	viper.BindEnv("SPOTIFY_CLIENT_ID")
-	viper.BindEnv("SPOTIFY_CLIENT_SECRET")
-	viper.BindEnv("SPOTIFY_REDIRECT_URI")
-	viper.BindEnv("SETLIST_FM_API_KEY")
+	_ = viper.BindEnv("SPOTIFY_CLIENT_ID")
+	_ = viper.BindEnv("SPOTIFY_CLIENT_SECRET")
+	_ = viper.BindEnv("SPOTIFY_REDIRECT_URI")
+	_ = viper.BindEnv("SETLIST_FM_API_KEY")
 
 	// Optional flags
 	cmd.Flags().String("spotify-client-id", "", "Spotify client ID (env: SPOTIFY_CLIENT_ID)")
 	cmd.Flags().String("spotify-client-secret", "", "Spotify client secret (env: SPOTIFY_CLIENT_SECRET)")
-	cmd.Flags().String("spotify-redirect-uri", "http://localhost:8080/callback", "Spotify redirect URI (env: SPOTIFY_REDIRECT_URI)")
+	cmd.Flags().
+		String("spotify-redirect-uri", "http://localhost:8080/callback", "Spotify redirect URI (env: SPOTIFY_REDIRECT_URI)")
 	cmd.Flags().String("setlistfm-api-key", "", "Setlist.fm API key (env: SETLIST_FM_API_KEY)")
 
 	// Bind flags to viper keys for later lookups
-	viper.BindPFlag("SPOTIFY_CLIENT_ID", cmd.Flags().Lookup("spotify-client-id"))
-	viper.BindPFlag("SPOTIFY_CLIENT_SECRET", cmd.Flags().Lookup("spotify-client-secret"))
-	viper.BindPFlag("SPOTIFY_REDIRECT_URI", cmd.Flags().Lookup("spotify-redirect-uri"))
-	viper.BindPFlag("SETLIST_FM_API_KEY", cmd.Flags().Lookup("setlistfm-api-key"))
+	_ = viper.BindPFlag("SPOTIFY_CLIENT_ID", cmd.Flags().Lookup("spotify-client-id"))
+	_ = viper.BindPFlag("SPOTIFY_CLIENT_SECRET", cmd.Flags().Lookup("spotify-client-secret"))
+	_ = viper.BindPFlag("SPOTIFY_REDIRECT_URI", cmd.Flags().Lookup("spotify-redirect-uri"))
+	_ = viper.BindPFlag("SETLIST_FM_API_KEY", cmd.Flags().Lookup("setlistfm-api-key"))
 
 	return cmd
 }
 
 // PreRunE validates requirements and instantiates runtime dependencies before Run().
-func (c *CreatePlaylistCmd) PreRunE(cmd *cobra.Command, args []string) error {
+func (c *CreatePlaylistCmd) PreRunE(cmd *cobra.Command, _ []string) error {
 	ctx := cmd.Context()
 	stdout := cmd.OutOrStdout()
 	stderr := cmd.ErrOrStderr()
@@ -148,7 +153,8 @@ func (c *CreatePlaylistCmd) PreRunE(cmd *cobra.Command, args []string) error {
 	)
 	return nil
 }
-func (c *CreatePlaylistCmd) RunE(cmd *cobra.Command, args []string) error {
+
+func (c *CreatePlaylistCmd) RunE(cmd *cobra.Command, _ []string) error {
 	ctx := cmd.Context()
 
 	artist, err := cmd.Flags().GetString("artist")

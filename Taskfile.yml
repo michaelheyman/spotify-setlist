@@ -9,10 +9,19 @@ tasks:
 
   fmt:
     desc: auto-format all go files
-    sources:
-      - "**/*.go"
+    preconditions:
+      - sh: which golangci-lint
+        msg: "golangci-lint is not installed. Please install it from https://golangci-lint.run/usage/install/"
     cmds:
-      - gofumpt -l -w .
+      - golangci-lint fmt --verbose
+
+  lint:
+    desc: lint all go files
+    preconditions:
+      - sh: which golangci-lint
+        msg: "golangci-lint is not installed. Please install it from https://golangci-lint.run/usage/install/"
+    cmds:
+      - golangci-lint run
 
   mocks:
     desc: generate new mocks from scratch

@@ -6,6 +6,7 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/michaelheyman/spotify-setlist/internal/domain"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPlaylist_Validate(t *testing.T) {
@@ -36,7 +37,7 @@ func TestPlaylist_Validate(t *testing.T) {
 				Description: "description",
 				Songs:       []string{"foo", "bar", "baz"},
 			},
-			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
+			wantErr: func(_ assert.TestingT, err error, _ ...any) bool {
 				return assertValidationField(t, err, "Artist", "cannot be blank")
 			},
 		},
@@ -47,7 +48,7 @@ func TestPlaylist_Validate(t *testing.T) {
 				Description: "description",
 				Artist:      "artist",
 			},
-			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
+			wantErr: func(_ assert.TestingT, err error, _ ...any) bool {
 				return assertValidationField(t, err, "Songs", "cannot be blank")
 			},
 		},
@@ -61,20 +62,11 @@ func TestPlaylist_Validate(t *testing.T) {
 	}
 }
 
-func assertValidationField(t assert.TestingT, err error, field, expectedMsg string) bool {
-	if !assert.NotNil(t, err, "An error was expected") {
-		return false
-	}
-
-	validationErr, ok := err.(validation.Errors)
-	if !assert.True(t, ok, "Error must be of type validation.Errors") {
-		return false
-	}
-
+func assertValidationField(t *testing.T, err error, field, expectedMsg string) bool {
+	require.Error(t, err, "An error was expected")
+	var validationErr validation.Errors
+	require.ErrorAs(t, err, &validationErr, "Error must be of type validation.Errors")
 	fieldErr := validationErr[field]
-	if !assert.NotNil(t, fieldErr, "Expected error for field: %s", field) {
-		return false
-	}
-
+	require.Error(t, fieldErr, "Expected error for field: %s", field)
 	return assert.EqualError(t, fieldErr, expectedMsg)
 }

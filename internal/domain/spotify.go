@@ -31,7 +31,7 @@ type AuthenticationFactory interface {
 
 type TokenStore interface {
 	SaveToken(ctx context.Context, token *SpotifyToken) error
-	LoadToken(ctx context.Context) (*SpotifyToken, error)
+	LoadToken(ctx context.Context) (*SpotifyToken, bool, error)
 }
 
 type SpotifyAuthConfig struct {
@@ -53,6 +53,7 @@ func (c SpotifyAuthConfig) Validate() error {
 
 type SpotifyPlaylist struct {
 	Playlist
+
 	Tracks        []SpotifyTrack
 	Public        bool
 	Collaborative bool

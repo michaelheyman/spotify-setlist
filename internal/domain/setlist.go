@@ -22,8 +22,8 @@ type SetlistRepository interface {
 	GetSetlists(ctx context.Context, artist string, opts ...GetSetlistOption) ([]Setlist, error)
 }
 
-func WithMaxSetlists(max int) GetSetlistOption {
+func WithMaxSetlists(maxSetlists int) GetSetlistOption {
 	return func(o *GetSetlistOptions) {
-		o.maxSetlists = max
+		o.maxSetlists = maxSetlists
 	}
 }

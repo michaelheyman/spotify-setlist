@@ -11,7 +11,8 @@ import (
 )
 
 const (
-	apiKeyHeader = "x-api-key"
+	//nolint:gosec // these are not hardcoded credentials
+	apiKeyHeader = "X-Api-Key"
 	baseURL      = "https://api.setlist.fm/rest/1.0"
 )
 
@@ -50,7 +51,11 @@ func NewSetlistFMService(client *http.Client, apiKey string, opts ...Option) Set
 	}
 }
 
-func (s setlistFMService) GetSetlists(ctx context.Context, artist string, opts ...domain.GetSetlistOption) ([]domain.Setlist, error) {
+func (s setlistFMService) GetSetlists(
+	ctx context.Context,
+	artist string,
+	_ ...domain.GetSetlistOption,
+) ([]domain.Setlist, error) {
 	// Get the artist mbid (Musicbrainz MBID) from the Setlist.fm API
 	mbid, err := s.getArtistMBID(ctx, artist)
 	if err != nil {
@@ -66,7 +71,7 @@ func (s setlistFMService) GetSetlists(ctx context.Context, artist string, opts .
 	return setlists, nil
 }
 
-// getArtistMBID retrieves the Musicbrainz MBID for the given artist from Setlist.fm API
+// getArtistMBID retrieves the Musicbrainz MBID for the given artist from Setlist.fm API.
 func (s setlistFMService) getArtistMBID(ctx context.Context, artist string) (string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/search/artists", s.baseURL), nil)
 	if err != nil {
@@ -91,17 +96,17 @@ func (s setlistFMService) getArtistMBID(ctx context.Context, artist string) (str
 		return "", fmt.Errorf("request failed with status %d", res.StatusCode)
 	}
 
-	var searchArtistResponse searchArtistResponse
-	if err := json.NewDecoder(res.Body).Decode(&searchArtistResponse); err != nil {
+	var searchResp searchArtistResponse
+	if err := json.NewDecoder(res.Body).Decode(&searchResp); err != nil {
 		return "", fmt.Errorf("decoding response: %w", err)
 	}
 
-	if len(searchArtistResponse.Artist) < 1 {
+	if len(searchResp.Artist) < 1 {
 		return "", fmt.Errorf("no artist found for name: %s", artist)
 	}
 
 	// Return the first artist's MBID since we are getting results sorted by relevance
-	return searchArtistResponse.Artist[0].Mbid, nil
+	return searchResp.Artist[0].Mbid, nil
 }
 
 func defaultOpts() Options {
@@ -110,9 +115,14 @@ func defaultOpts() Options {
 	}
 }
 
-// getArtistSetlists retrieves the setlists for an artist's MBID
+// getArtistSetlists retrieves the setlists for an artist's MBID.
 func (s setlistFMService) getArtistSetlists(ctx context.Context, mbid string) ([]domain.Setlist, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/artist/%s/setlists", s.baseURL, mbid), nil)
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodGet,
+		fmt.Sprintf("%s/artist/%s/setlists", s.baseURL, mbid),
+		nil,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("creating request: %w", err)
 	}
@@ -144,6 +154,7 @@ func (s setlistFMService) getArtistSetlists(ctx context.Context, mbid string) ([
 	return setlists, nil
 }
 
+//nolint:unparam // This method will return an error eventually
 func (asr getArtistSetlistsResponse) toSetlists() ([]domain.Setlist, error) {
 	var setlists []domain.Setlist
 	for _, s := range asr.Setlist {

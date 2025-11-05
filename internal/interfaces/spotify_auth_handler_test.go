@@ -11,6 +11,7 @@ import (
 	"github.com/michaelheyman/spotify-setlist/internal/domain/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
 )
 
@@ -41,7 +42,7 @@ func Test_spotifyAuthHandler_StartAuthFlow(t *testing.T) {
 			setExpectations: func(c *mocks.SpotifyClientFactory, a *mocks.SpotifyAuthenticator, s *mocks.TokenStore) {
 				s.EXPECT().
 					LoadToken(mock.Anything).
-					Return(nil, nil)
+					Return(nil, false, nil)
 				a.EXPECT().
 					AuthURL(state).
 					Return(authURL)
@@ -68,7 +69,7 @@ func Test_spotifyAuthHandler_StartAuthFlow(t *testing.T) {
 			setExpectations: func(c *mocks.SpotifyClientFactory, a *mocks.SpotifyAuthenticator, s *mocks.TokenStore) {
 				s.EXPECT().
 					LoadToken(mock.Anything).
-					Return(spotifyToken, nil)
+					Return(spotifyToken, true, nil)
 				a.EXPECT().
 					Client(mock.Anything, token).
 					Return(&http.Client{})
@@ -81,10 +82,10 @@ func Test_spotifyAuthHandler_StartAuthFlow(t *testing.T) {
 		},
 		{
 			name: "should return forbidden error when token exchange fails",
-			setExpectations: func(c *mocks.SpotifyClientFactory, a *mocks.SpotifyAuthenticator, s *mocks.TokenStore) {
+			setExpectations: func(_ *mocks.SpotifyClientFactory, a *mocks.SpotifyAuthenticator, s *mocks.TokenStore) {
 				s.EXPECT().
 					LoadToken(mock.Anything).
-					Return(nil, nil)
+					Return(nil, false, nil)
 				a.EXPECT().
 					AuthURL(state).
 					Return(authURL)
@@ -99,25 +100,25 @@ func Test_spotifyAuthHandler_StartAuthFlow(t *testing.T) {
 		},
 		{
 			name: "should return error when load token fails",
-			setExpectations: func(c *mocks.SpotifyClientFactory, a *mocks.SpotifyAuthenticator, s *mocks.TokenStore) {
+			setExpectations: func(_ *mocks.SpotifyClientFactory, _ *mocks.SpotifyAuthenticator, s *mocks.TokenStore) {
 				s.EXPECT().
 					LoadToken(mock.Anything).
-					Return(nil, assert.AnError)
+					Return(nil, false, assert.AnError)
 			},
 			noCallback: true,
 			wantStatus: http.StatusUnauthorized,
-			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
-				assert.ErrorIs(t, err, assert.AnError)
+			wantErr: func(_ assert.TestingT, err error, _ ...any) bool {
+				require.ErrorIs(t, err, assert.AnError)
 				assert.ErrorContains(t, err, "loading token:")
 				return true
 			},
 		},
 		{
 			name: "should return unauthorized error when there is an OAuth state mismatch",
-			setExpectations: func(c *mocks.SpotifyClientFactory, a *mocks.SpotifyAuthenticator, s *mocks.TokenStore) {
+			setExpectations: func(_ *mocks.SpotifyClientFactory, a *mocks.SpotifyAuthenticator, s *mocks.TokenStore) {
 				s.EXPECT().
 					LoadToken(mock.Anything).
-					Return(nil, nil)
+					Return(nil, false, nil)
 				a.EXPECT().
 					AuthURL(state).
 					Return(authURL)
@@ -132,10 +133,10 @@ func Test_spotifyAuthHandler_StartAuthFlow(t *testing.T) {
 		},
 		{
 			name: "should return error when saving token fails",
-			setExpectations: func(c *mocks.SpotifyClientFactory, a *mocks.SpotifyAuthenticator, s *mocks.TokenStore) {
+			setExpectations: func(_ *mocks.SpotifyClientFactory, a *mocks.SpotifyAuthenticator, s *mocks.TokenStore) {
 				s.EXPECT().
 					LoadToken(mock.Anything).
-					Return(nil, nil)
+					Return(nil, false, nil)
 				a.EXPECT().
 					AuthURL(state).
 					Return(authURL)
@@ -191,7 +192,7 @@ func Test_spotifyAuthHandler_StartAuthFlow(t *testing.T) {
 				t.Fatalf("creating query URL: %v", err)
 			}
 			req, err := http.NewRequestWithContext(ctx, http.MethodGet, callbackURL, nil)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			// Make request in a goroutine to avoid blocking
 			client := &http.Client{Timeout: 3 * time.Second}

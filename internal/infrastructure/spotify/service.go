@@ -12,13 +12,17 @@ type spotifyService struct {
 	client domain.SpotifyClient
 }
 
-func NewSpotifyService(client domain.SpotifyClient) spotifyService {
+func NewSpotifyService(client domain.SpotifyClient) domain.PlaylistRepository {
 	return spotifyService{
 		client: client,
 	}
 }
 
-func (s spotifyService) CreatePlaylist(ctx context.Context, playlist domain.Playlist, opts ...domain.CreatePlaylistOption) (domain.CreatePlaylistResult, error) {
+func (s spotifyService) CreatePlaylist(
+	ctx context.Context,
+	playlist domain.Playlist,
+	opts ...domain.CreatePlaylistOption,
+) (domain.CreatePlaylistResult, error) {
 	if err := playlist.Validate(); err != nil {
 		return domain.CreatePlaylistResult{}, fmt.Errorf("validating playlist parameter: %w", err)
 	}
@@ -42,7 +46,12 @@ func (s spotifyService) CreatePlaylist(ctx context.Context, playlist domain.Play
 	}, nil
 }
 
-func (s spotifyService) findTracks(ctx context.Context, artist string, songs []string, mostPopular bool) ([]domain.SpotifyTrack, []string, error) {
+func (s spotifyService) findTracks(
+	ctx context.Context,
+	artist string,
+	songs []string,
+	mostPopular bool,
+) ([]domain.SpotifyTrack, []string, error) {
 	var tracks []domain.SpotifyTrack
 	var missing []string
 

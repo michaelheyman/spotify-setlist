@@ -3,9 +3,8 @@ package playlist
 import (
 	"context"
 	"errors"
-	"time"
-
 	"fmt"
+	"time"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/michaelheyman/spotify-setlist/internal/domain"
@@ -38,14 +37,17 @@ type playlistService struct {
 	playlist domain.PlaylistRepository
 }
 
-func NewPlaylistService(setlist domain.SetlistRepository, playlist domain.PlaylistRepository) playlistService {
+func NewPlaylistService(setlist domain.SetlistRepository, playlist domain.PlaylistRepository) PlaylistService {
 	return playlistService{
 		setlist:  setlist,
 		playlist: playlist,
 	}
 }
 
-func (p playlistService) CreatePlaylist(ctx context.Context, params CreatePlaylistParams) (CreatePlaylistResult, error) {
+func (p playlistService) CreatePlaylist(
+	ctx context.Context,
+	params CreatePlaylistParams,
+) (CreatePlaylistResult, error) {
 	if err := params.Validate(); err != nil {
 		return CreatePlaylistResult{}, fmt.Errorf("validating parameters: %w", err)
 	}

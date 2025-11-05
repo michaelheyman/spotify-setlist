@@ -1,6 +1,3 @@
-/*
-Copyright © 2025 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
@@ -14,12 +11,13 @@ import (
 	"github.com/spf13/viper"
 )
 
+//nolint:gochecknoglobals // Ignored for now
 var cfgFile string
 
 type Dependencies struct {
 	AuthFactory domain.AuthenticationFactory
 	TokenStore  domain.TokenStore
-	HttpClient  *http.Client
+	HTTPClient  *http.Client
 }
 
 func NewRootCmd(deps *Dependencies) *cobra.Command {
@@ -46,7 +44,7 @@ to quickly create a Cobra application.`,
 	cmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	cmd.PersistentFlags().BoolP("verbose", "v", false, "Verbose output")
 
-	cmd.AddCommand(NewCreatePlaylistCmd(deps.AuthFactory, deps.HttpClient, deps.TokenStore))
+	cmd.AddCommand(NewCreatePlaylistCmd(deps.AuthFactory, deps.HTTPClient, deps.TokenStore))
 
 	return cmd
 }
@@ -68,7 +66,9 @@ func initConfig() {
 	}
 
 	if err := godotenv.Load(); err != nil {
-		// It's ok if .env doesn't exist. Add a debug/verbose message here later.
+		if os.Getenv("DEBUG") != "" {
+			fmt.Printf(".env file does not exist, checking system environment variables")
+		}
 	}
 	viper.AutomaticEnv() // read in environment variables that match
 

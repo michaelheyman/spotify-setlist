@@ -10,8 +10,7 @@ import (
 	"golang.org/x/oauth2"
 )
 
-type ExternalSpotifyClientFactory struct {
-}
+type ExternalSpotifyClientFactory struct{}
 
 func (s ExternalSpotifyClientFactory) NewClient(httpClient *http.Client) domain.SpotifyClient {
 	return NewSpotifyClient(spotify.New(httpClient))

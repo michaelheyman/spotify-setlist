@@ -14,7 +14,10 @@ func NewSpotifyAuthFactory() *SpotifyAuthFactory {
 	return &SpotifyAuthFactory{}
 }
 
-func (f SpotifyAuthFactory) CreateAuthenticator(ctx context.Context, config domain.SpotifyAuthConfig) (domain.SpotifyAuthenticator, error) {
+func (f SpotifyAuthFactory) CreateAuthenticator(
+	_ context.Context,
+	config domain.SpotifyAuthConfig,
+) (domain.SpotifyAuthenticator, error) {
 	if err := config.Validate(); err != nil {
 		return nil, fmt.Errorf("validating authenticator config: %w", err)
 	}

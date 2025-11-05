@@ -13,8 +13,8 @@ import (
 const (
 	directory = ".spotify-setlist"
 	tokenFile = "token.json"
-	userRWX   = 0700
-	userRW    = 0600
+	userRWX   = 0o700
+	userRW    = 0o600
 )
 
 type FileTokenStore struct {
@@ -38,7 +38,7 @@ func NewFileTokenStore() (*FileTokenStore, error) {
 	}, nil
 }
 
-func (s FileTokenStore) SaveToken(ctx context.Context, token *domain.SpotifyToken) error {
+func (s FileTokenStore) SaveToken(_ context.Context, token *domain.SpotifyToken) error {
 	data, err := json.Marshal(token)
 	if err != nil {
 		return fmt.Errorf("marshaling token: %w", err)
@@ -50,19 +50,19 @@ func (s FileTokenStore) SaveToken(ctx context.Context, token *domain.SpotifyToke
 	return nil
 }
 
-func (s FileTokenStore) LoadToken(ctx context.Context) (*domain.SpotifyToken, error) {
+func (s FileTokenStore) LoadToken(_ context.Context) (*domain.SpotifyToken, bool, error) {
 	data, err := os.ReadFile(s.path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			// Token not found
-			return nil, nil
+			return nil, false, nil
 		}
-		return nil, fmt.Errorf("reading token file: %w", err)
+		return nil, false, fmt.Errorf("reading token file: %w", err)
 	}
 
 	var token domain.SpotifyToken
 	if err := json.Unmarshal(data, &token); err != nil {
-		return nil, fmt.Errorf("unmarshaling token: %w", err)
+		return nil, false, fmt.Errorf("unmarshaling token: %w", err)
 	}
-	return &token, nil
+	return &token, true, nil
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/michaelheyman/spotify-setlist/internal/infrastructure/externalsdk/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"github.com/zmb3/spotify/v2"
 )
 
@@ -89,8 +90,8 @@ func Test_spotifyClient_CreatePlaylistForUser(t *testing.T) {
 					).
 					Return(nil, assert.AnError)
 			},
-			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
-				assert.ErrorIs(t, err, assert.AnError)
+			wantErr: func(_ assert.TestingT, err error, _ ...any) bool {
+				require.ErrorIs(t, err, assert.AnError)
 				assert.ErrorContains(t, err, "creating playlist for user:")
 				return true
 			},
@@ -124,8 +125,8 @@ func Test_spotifyClient_CreatePlaylistForUser(t *testing.T) {
 					).
 					Return("", assert.AnError)
 			},
-			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
-				assert.ErrorIs(t, err, assert.AnError)
+			wantErr: func(_ assert.TestingT, err error, _ ...any) bool {
+				require.ErrorIs(t, err, assert.AnError)
 				assert.ErrorContains(t, err, "adding tracks to playlist:")
 				return true
 			},
@@ -227,8 +228,8 @@ func Test_spotifyClient_SearchTrack(t *testing.T) {
 					).
 					Return(nil, assert.AnError)
 			},
-			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
-				assert.ErrorIs(t, err, assert.AnError)
+			wantErr: func(_ assert.TestingT, err error, _ ...any) bool {
+				require.ErrorIs(t, err, assert.AnError)
 				assert.ErrorContains(t, err, fmt.Sprintf("searching for song '%s':", testdata.title))
 				return true
 			},
@@ -301,8 +302,8 @@ func Test_spotifyClient_CurrentUser(t *testing.T) {
 					CurrentUser(mock.Anything).
 					Return(nil, assert.AnError)
 			},
-			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
-				assert.ErrorIs(t, err, assert.AnError)
+			wantErr: func(_ assert.TestingT, err error, _ ...any) bool {
+				require.ErrorIs(t, err, assert.AnError)
 				assert.ErrorContains(t, err, "getting current user:")
 				return true
 			},
