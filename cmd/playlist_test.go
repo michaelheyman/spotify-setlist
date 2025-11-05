@@ -37,7 +37,7 @@ func TestCreatePlaylistCmd_Execute(t *testing.T) {
 		name            string
 		args            []string
 		env             map[string]string
-		setExpectations func(f *mocks.AuthenticationFactory)
+		setExpectations func(f *mocks.AuthenticationFactory, t *mocks.TokenStore)
 		wantOutput      string
 		wantErr         assert.ErrorAssertionFunc
 	}{
@@ -49,7 +49,7 @@ func TestCreatePlaylistCmd_Execute(t *testing.T) {
 				"SPOTIFY_REDIRECT_URI":  testdata.redirectURI,
 				"SETLIST_FM_API_KEY":    testdata.apiKey,
 			},
-			setExpectations: func(_ *mocks.AuthenticationFactory) {},
+			setExpectations: func(_ *mocks.AuthenticationFactory, t *mocks.TokenStore) {},
 			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
 				assert.EqualError(t, err, "missing Spotify client ID")
 				return true
@@ -63,7 +63,7 @@ func TestCreatePlaylistCmd_Execute(t *testing.T) {
 				"SPOTIFY_REDIRECT_URI": testdata.redirectURI,
 				"SETLIST_FM_API_KEY":   testdata.apiKey,
 			},
-			setExpectations: func(_ *mocks.AuthenticationFactory) {},
+			setExpectations: func(_ *mocks.AuthenticationFactory, t *mocks.TokenStore) {},
 			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
 				assert.EqualError(t, err, "missing Spotify client secret")
 				return true
@@ -77,7 +77,7 @@ func TestCreatePlaylistCmd_Execute(t *testing.T) {
 				"SPOTIFY_CLIENT_SECRET": testdata.clientSecret,
 				"SPOTIFY_REDIRECT_URI":  testdata.redirectURI,
 			},
-			setExpectations: func(_ *mocks.AuthenticationFactory) {},
+			setExpectations: func(_ *mocks.AuthenticationFactory, t *mocks.TokenStore) {},
 			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
 				assert.EqualError(t, err, "missing Setlist.FM API key")
 				return true
@@ -87,7 +87,7 @@ func TestCreatePlaylistCmd_Execute(t *testing.T) {
 			name: "should return error when authenticator fails to create",
 			args: []string{"create-playlist", "--artist", "The Beatles"},
 			env:  validEnv,
-			setExpectations: func(f *mocks.AuthenticationFactory) {
+			setExpectations: func(f *mocks.AuthenticationFactory, t *mocks.TokenStore) {
 				f.EXPECT().
 					CreateAuthenticator(
 						mock.Anything,
@@ -118,11 +118,13 @@ func TestCreatePlaylistCmd_Execute(t *testing.T) {
 				t.Setenv(k, v)
 			}
 			f := &mocks.AuthenticationFactory{}
-			tt.setExpectations(f)
+			s := &mocks.TokenStore{}
+			tt.setExpectations(f, s)
 			defer f.AssertExpectations(t)
+			defer s.AssertExpectations(t)
 			b := bytes.NewBufferString("")
 
-			cmd := NewCreatePlaylistCmd(f, http.DefaultClient)
+			cmd := NewCreatePlaylistCmd(f, http.DefaultClient, s)
 			cmd.SetArgs(tt.args)
 			cmd.SetOut(b)
 			cmd.SilenceUsage = true

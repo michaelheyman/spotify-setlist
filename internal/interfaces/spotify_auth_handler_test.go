@@ -22,10 +22,15 @@ func Test_spotifyAuthHandler_StartAuthFlow(t *testing.T) {
 		AccessToken:  "some-access-token",
 		RefreshToken: "some-refresh-token",
 	}
+	spotifyToken := &domain.SpotifyToken{
+		AccessToken:  token.AccessToken,
+		RefreshToken: token.RefreshToken,
+	}
 
 	tests := []struct {
 		name            string
-		setExpectations func(c *mocks.SpotifyClientFactory, a *mocks.SpotifyAuthenticator)
+		setExpectations func(c *mocks.SpotifyClientFactory, a *mocks.SpotifyAuthenticator, s *mocks.TokenStore)
+		noCallback      bool
 		callbackState   string
 		wantStatus      int
 		want            string
@@ -33,7 +38,10 @@ func Test_spotifyAuthHandler_StartAuthFlow(t *testing.T) {
 	}{
 		{
 			name: "successfully starts auth flow",
-			setExpectations: func(c *mocks.SpotifyClientFactory, a *mocks.SpotifyAuthenticator) {
+			setExpectations: func(c *mocks.SpotifyClientFactory, a *mocks.SpotifyAuthenticator, s *mocks.TokenStore) {
+				s.EXPECT().
+					LoadToken(mock.Anything).
+					Return(nil, nil)
 				a.EXPECT().
 					AuthURL(state).
 					Return(authURL)
@@ -43,6 +51,9 @@ func Test_spotifyAuthHandler_StartAuthFlow(t *testing.T) {
 				a.EXPECT().
 					Client(mock.Anything, token).
 					Return(&http.Client{})
+				s.EXPECT().
+					SaveToken(mock.Anything, spotifyToken).
+					Return(nil)
 				c.EXPECT().
 					NewClient(mock.Anything).
 					Return(mockClient)
@@ -53,8 +64,27 @@ func Test_spotifyAuthHandler_StartAuthFlow(t *testing.T) {
 			wantErr:       assert.NoError,
 		},
 		{
+			name: "should perform auth flow with only saved token",
+			setExpectations: func(c *mocks.SpotifyClientFactory, a *mocks.SpotifyAuthenticator, s *mocks.TokenStore) {
+				s.EXPECT().
+					LoadToken(mock.Anything).
+					Return(spotifyToken, nil)
+				a.EXPECT().
+					Client(mock.Anything, token).
+					Return(&http.Client{})
+				c.EXPECT().
+					NewClient(mock.Anything).
+					Return(mockClient)
+			},
+			noCallback: true,
+			wantErr:    assert.NoError,
+		},
+		{
 			name: "should return forbidden error when token exchange fails",
-			setExpectations: func(c *mocks.SpotifyClientFactory, a *mocks.SpotifyAuthenticator) {
+			setExpectations: func(c *mocks.SpotifyClientFactory, a *mocks.SpotifyAuthenticator, s *mocks.TokenStore) {
+				s.EXPECT().
+					LoadToken(mock.Anything).
+					Return(nil, nil)
 				a.EXPECT().
 					AuthURL(state).
 					Return(authURL)
@@ -68,8 +98,26 @@ func Test_spotifyAuthHandler_StartAuthFlow(t *testing.T) {
 			wantErr:       assert.NoError,
 		},
 		{
+			name: "should return error when load token fails",
+			setExpectations: func(c *mocks.SpotifyClientFactory, a *mocks.SpotifyAuthenticator, s *mocks.TokenStore) {
+				s.EXPECT().
+					LoadToken(mock.Anything).
+					Return(nil, assert.AnError)
+			},
+			noCallback: true,
+			wantStatus: http.StatusUnauthorized,
+			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
+				assert.ErrorIs(t, err, assert.AnError)
+				assert.ErrorContains(t, err, "loading token:")
+				return true
+			},
+		},
+		{
 			name: "should return unauthorized error when there is an OAuth state mismatch",
-			setExpectations: func(c *mocks.SpotifyClientFactory, a *mocks.SpotifyAuthenticator) {
+			setExpectations: func(c *mocks.SpotifyClientFactory, a *mocks.SpotifyAuthenticator, s *mocks.TokenStore) {
+				s.EXPECT().
+					LoadToken(mock.Anything).
+					Return(nil, nil)
 				a.EXPECT().
 					AuthURL(state).
 					Return(authURL)
@@ -82,15 +130,37 @@ func Test_spotifyAuthHandler_StartAuthFlow(t *testing.T) {
 			want:          authURL,
 			wantErr:       assert.NoError,
 		},
+		{
+			name: "should return error when saving token fails",
+			setExpectations: func(c *mocks.SpotifyClientFactory, a *mocks.SpotifyAuthenticator, s *mocks.TokenStore) {
+				s.EXPECT().
+					LoadToken(mock.Anything).
+					Return(nil, nil)
+				a.EXPECT().
+					AuthURL(state).
+					Return(authURL)
+				a.EXPECT().
+					Token(mock.Anything, state, mock.Anything).
+					Return(token, nil)
+				s.EXPECT().
+					SaveToken(mock.Anything, spotifyToken).
+					Return(assert.AnError)
+			},
+			callbackState: state,
+			wantStatus:    http.StatusInternalServerError,
+			want:          authURL,
+			wantErr:       assert.NoError,
+		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &mocks.SpotifyClientFactory{}
 			a := &mocks.SpotifyAuthenticator{}
-			tt.setExpectations(c, a)
+			s := &mocks.TokenStore{}
+			tt.setExpectations(c, a, s)
 			defer c.AssertExpectations(t)
 			defer a.AssertExpectations(t)
+			defer s.AssertExpectations(t)
 
 			// Create a context with timeout for the entire test
 			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
@@ -100,6 +170,7 @@ func Test_spotifyAuthHandler_StartAuthFlow(t *testing.T) {
 			handler := &spotifyAuthHandler{
 				spotify:       c,
 				auth:          a,
+				tokenStore:    s,
 				state:         state,
 				clientChan:    make(chan domain.SpotifyClient),
 				serverErrChan: make(chan error),
@@ -109,6 +180,11 @@ func Test_spotifyAuthHandler_StartAuthFlow(t *testing.T) {
 			gotURL, err := handler.StartAuthFlow(ctx)
 			tt.wantErr(t, err)
 			assert.Equal(t, tt.want, gotURL)
+
+			// If this test doesn't execute the callback, end test early
+			if tt.noCallback {
+				return
+			}
 
 			callbackURL, err := createQueryURL(tt.callbackState)
 			if err != nil {

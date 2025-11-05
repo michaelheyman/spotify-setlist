@@ -23,12 +23,14 @@ type CreatePlaylistCmd struct {
 	authFactory domain.AuthenticationFactory
 	httpClient  *http.Client
 	service     application.PlaylistService
+	tokenStore  domain.TokenStore
 }
 
-func NewCreatePlaylistCmd(authFactory domain.AuthenticationFactory, httpClient *http.Client) *cobra.Command {
+func NewCreatePlaylistCmd(authFactory domain.AuthenticationFactory, httpClient *http.Client, tokenStore domain.TokenStore) *cobra.Command {
 	createCmd := CreatePlaylistCmd{
 		authFactory: authFactory,
 		httpClient:  httpClient,
+		tokenStore:  tokenStore,
 	}
 
 	cmd := &cobra.Command{
@@ -111,17 +113,20 @@ func (c *CreatePlaylistCmd) PreRunE(cmd *cobra.Command, args []string) error {
 	}
 
 	spotifyFactory := spotify.ExternalSpotifyClientFactory{}
-	handler := interfaces.NewSpotifyAuthHandler(spotifyFactory, authenticator)
+	handler := interfaces.NewSpotifyAuthHandler(spotifyFactory, authenticator, c.tokenStore)
 
 	authURL, err := handler.StartAuthFlow(ctx)
 	if err != nil {
 		return err
 	}
 
-	if err := browser.OpenURL(authURL); err != nil {
-		return err
+	// AuthURL will be empty if a refresh token was found
+	if authURL != "" {
+		if err := browser.OpenURL(authURL); err != nil {
+			return err
+		}
+		fmt.Fprintf(stderr, "Your browser has been opened to visit:\n\n\t%s\n\n", authURL)
 	}
-	fmt.Fprintf(stderr, "Your browser has been opened to visit:\n\n\t%s\n\n", authURL)
 
 	client, err := handler.WaitForClient(ctx)
 	if err != nil {
