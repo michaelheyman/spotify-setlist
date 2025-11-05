@@ -39,10 +39,11 @@ func TestFileTokenStore_TokenStore(t *testing.T) {
 
 			tt.wantErr(t, err, "SaveToken returned error")
 
-			token, err := s.LoadToken(context.Background())
+			token, found, err := s.LoadToken(context.Background())
 
 			tt.wantErr(t, err, "LoadToken returned error")
 			assert.Equal(t, tt.token, token)
+			assert.True(t, found)
 		})
 	}
 }

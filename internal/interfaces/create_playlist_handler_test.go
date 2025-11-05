@@ -9,6 +9,7 @@ import (
 	"github.com/michaelheyman/spotify-setlist/internal/domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_createPlaylistHandler_CreatePlaylist(t *testing.T) {
@@ -67,8 +68,8 @@ func Test_createPlaylistHandler_CreatePlaylist(t *testing.T) {
 					).
 					Return(application.CreatePlaylistResult{}, assert.AnError)
 			},
-			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
-				assert.ErrorIs(t, err, assert.AnError)
+			wantErr: func(_ assert.TestingT, err error, _ ...any) bool {
+				require.ErrorIs(t, err, assert.AnError)
 				assert.ErrorContains(t, err, "creating playlist:")
 				return true
 			},

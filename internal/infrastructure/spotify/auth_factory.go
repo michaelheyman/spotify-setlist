@@ -15,7 +15,7 @@ func NewSpotifyAuthFactory() *SpotifyAuthFactory {
 }
 
 func (f SpotifyAuthFactory) CreateAuthenticator(
-	ctx context.Context,
+	_ context.Context,
 	config domain.SpotifyAuthConfig,
 ) (domain.SpotifyAuthenticator, error) {
 	if err := config.Validate(); err != nil {

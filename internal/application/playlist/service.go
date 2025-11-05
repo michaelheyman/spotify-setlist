@@ -37,7 +37,7 @@ type playlistService struct {
 	playlist domain.PlaylistRepository
 }
 
-func NewPlaylistService(setlist domain.SetlistRepository, playlist domain.PlaylistRepository) playlistService {
+func NewPlaylistService(setlist domain.SetlistRepository, playlist domain.PlaylistRepository) PlaylistService {
 	return playlistService{
 		setlist:  setlist,
 		playlist: playlist,

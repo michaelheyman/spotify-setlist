@@ -212,7 +212,7 @@ func Test_spotifyService_CreatePlaylist(t *testing.T) {
 					).
 					Return(domain.SpotifySearchResult{}, assert.AnError)
 			},
-			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
+			wantErr: func(_ assert.TestingT, err error, _ ...any) bool {
 				return assert.ErrorContains(t, err, "getting track IDs: searching for song 'first'") &&
 					assert.ErrorIs(t, err, assert.AnError)
 			},
@@ -234,8 +234,8 @@ func Test_spotifyService_CreatePlaylist(t *testing.T) {
 					).
 					Return(domain.SpotifySearchResult{}, nil)
 			},
-			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
-				return assert.Equal(t, err.Error(), "getting track IDs: no tracks found")
+			wantErr: func(_ assert.TestingT, err error, _ ...any) bool {
+				return assert.Equal(t, "getting track IDs: no tracks found", err.Error())
 			},
 		},
 		{
@@ -254,7 +254,7 @@ func Test_spotifyService_CreatePlaylist(t *testing.T) {
 					CurrentUser(mock.Anything).
 					Return("", assert.AnError)
 			},
-			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
+			wantErr: func(_ assert.TestingT, err error, _ ...any) bool {
 				return assert.ErrorContains(t, err, "creating playlist: getting current user: ") &&
 					assert.ErrorIs(t, err, assert.AnError)
 			},
@@ -301,7 +301,7 @@ func Test_spotifyService_CreatePlaylist(t *testing.T) {
 					).
 					Return(assert.AnError)
 			},
-			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
+			wantErr: func(_ assert.TestingT, err error, _ ...any) bool {
 				return assert.ErrorContains(t, err, "creating playlist: spotify client: ") &&
 					assert.ErrorIs(t, err, assert.AnError)
 			},

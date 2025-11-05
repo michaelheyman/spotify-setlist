@@ -10,6 +10,7 @@ import (
 	"github.com/michaelheyman/spotify-setlist/internal/domain/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_playlistService_CreatePlaylist(t *testing.T) {
@@ -92,7 +93,7 @@ func Test_playlistService_CreatePlaylist(t *testing.T) {
 			name:            "should return error when playlist creation parameters are invalid",
 			params:          CreatePlaylistParams{},
 			setExpectations: func(_ *mocks.SetlistRepository, _ *mocks.PlaylistRepository) {},
-			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
+			wantErr: func(_ assert.TestingT, err error, _ ...any) bool {
 				return assert.ErrorContains(t, err, "validating parameters: ")
 			},
 		},
@@ -107,7 +108,7 @@ func Test_playlistService_CreatePlaylist(t *testing.T) {
 					).
 					Return(nil, assert.AnError)
 			},
-			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
+			wantErr: func(_ assert.TestingT, err error, _ ...any) bool {
 				return assert.ErrorContains(t, err, "getting setlists: ")
 			},
 		},
@@ -126,7 +127,7 @@ func Test_playlistService_CreatePlaylist(t *testing.T) {
 						nil,
 					)
 			},
-			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
+			wantErr: func(_ assert.TestingT, err error, _ ...any) bool {
 				return assert.EqualError(t, err, "no setlists found matching criteria")
 			},
 		},
@@ -152,8 +153,8 @@ func Test_playlistService_CreatePlaylist(t *testing.T) {
 					).
 					Return(domain.CreatePlaylistResult{}, assert.AnError)
 			},
-			wantErr: func(tt assert.TestingT, err error, _ ...any) bool {
-				assert.ErrorIs(t, err, assert.AnError)
+			wantErr: func(_ assert.TestingT, err error, _ ...any) bool {
+				require.ErrorIs(t, err, assert.AnError)
 				assert.ErrorContains(t, err, "creating playlist: ")
 				return true
 			},

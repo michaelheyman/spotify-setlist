@@ -12,7 +12,7 @@ type spotifyService struct {
 	client domain.SpotifyClient
 }
 
-func NewSpotifyService(client domain.SpotifyClient) spotifyService {
+func NewSpotifyService(client domain.SpotifyClient) domain.PlaylistRepository {
 	return spotifyService{
 		client: client,
 	}

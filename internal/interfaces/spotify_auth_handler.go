@@ -2,6 +2,7 @@ package interfaces
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -41,12 +42,11 @@ func NewSpotifyAuthHandler(
 }
 
 func (s *spotifyAuthHandler) StartAuthFlow(ctx context.Context) (string, error) {
-	token, err := s.tokenStore.LoadToken(ctx)
+	token, found, err := s.tokenStore.LoadToken(ctx)
 	if err != nil {
 		return "", fmt.Errorf("loading token: %w", err)
 	}
-	if token != nil {
-		// Token was found
+	if found {
 		oauthToken := &oauth2.Token{
 			AccessToken:  token.AccessToken,
 			TokenType:    token.TokenType,
@@ -64,8 +64,9 @@ func (s *spotifyAuthHandler) StartAuthFlow(ctx context.Context) (string, error) 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/callback", s.handleAuthCallback)
 	s.server = &http.Server{
-		Addr:    ":8080",
-		Handler: mux,
+		Addr:              ":8080",
+		Handler:           mux,
+		ReadHeaderTimeout: 3 * time.Second,
 	}
 	go func() {
 		if err := s.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -103,7 +104,7 @@ func (s *spotifyAuthHandler) WaitForClient(ctx context.Context) (domain.SpotifyC
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		if err := s.server.Shutdown(shutdownCtx); err != nil && err != http.ErrServerClosed {
+		if err := s.server.Shutdown(shutdownCtx); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			return nil, fmt.Errorf("shutting down server on timeout: %w", err)
 		}
 		return nil, fmt.Errorf("waiting for client: %w", ctx.Err())
