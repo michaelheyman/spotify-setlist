@@ -3,8 +3,11 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 
+	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/lipgloss/table"
 	"github.com/cli/browser"
 	application "github.com/michaelheyman/spotify-setlist/internal/application/playlist"
 	"github.com/michaelheyman/spotify-setlist/internal/domain"
@@ -174,7 +177,89 @@ func (c *CreatePlaylistCmd) RunE(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("creating playlist from setlist: %w", err)
 	}
 
-	fmt.Fprintf(cmd.OutOrStdout(), "Created playlist for %s\n", result.Playlist.Artist)
+	outputCreatePlaylistResult(cmd.OutOrStdout(), result)
 
 	return nil
+}
+
+func outputCreatePlaylistResult(out io.Writer, result application.CreatePlaylistResult) {
+	var (
+		playlist     = result.Playlist
+		missingSongs = result.MissingSongs
+	)
+
+	fmt.Fprintf(out, "Created playlist for %s:\n", playlist.Artist)
+
+	var rows [][]string
+	for i, song := range playlist.Songs {
+		rows = append(rows, []string{
+			fmt.Sprintf("%d", i+1),
+			playlist.Artist,
+			song,
+		})
+	}
+
+	t := table.New().
+		Border(lipgloss.HiddenBorder()).
+		StyleFunc(func(row, col int) lipgloss.Style {
+			switch col {
+			case 0:
+				return lipgloss.NewStyle().
+					PaddingLeft(1).
+					PaddingRight(1).
+					Align(lipgloss.Right)
+			case 1:
+				return lipgloss.NewStyle().
+					PaddingLeft(1).
+					PaddingRight(1).
+					Align(lipgloss.Center)
+			case 2:
+				return lipgloss.NewStyle().
+					PaddingLeft(1).
+					PaddingRight(1).
+					Align(lipgloss.Left)
+			default:
+				return lipgloss.NewStyle().Align(lipgloss.Left)
+			}
+		}).
+		Headers("#", "ARTIST", "TITLE").
+		Rows(rows...)
+
+	fmt.Fprintln(out, t)
+
+	if len(missingSongs) == 0 {
+		return
+	}
+
+	var missingRows [][]string
+	for _, song := range missingSongs {
+		rows = append(rows, []string{song})
+	}
+	mt := table.New().
+		Border(lipgloss.HiddenBorder()).
+		StyleFunc(func(row, col int) lipgloss.Style {
+			switch col {
+			case 0:
+				return lipgloss.NewStyle().
+					PaddingLeft(1).
+					PaddingRight(1).
+					Align(lipgloss.Right)
+			case 1:
+				return lipgloss.NewStyle().
+					PaddingLeft(1).
+					PaddingRight(1).
+					Align(lipgloss.Center)
+			case 2:
+				return lipgloss.NewStyle().
+					PaddingLeft(1).
+					PaddingRight(1).
+					Align(lipgloss.Left)
+			default:
+				return lipgloss.NewStyle().Align(lipgloss.Left)
+			}
+		}).
+		Headers("MISSING SONGS").
+		Rows(missingRows...)
+
+	fmt.Fprintln(out, mt)
 }
