@@ -3,7 +3,6 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 
 	"github.com/charmbracelet/lipgloss"
@@ -177,19 +176,48 @@ func (c *CreatePlaylistCmd) RunE(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("creating playlist from setlist: %w", err)
 	}
 
-	outputCreatePlaylistResult(cmd.OutOrStdout(), result)
+	rendered := renderResult(result)
+
+	fmt.Fprintln(cmd.OutOrStdout(), rendered)
 
 	return nil
 }
 
-func outputCreatePlaylistResult(out io.Writer, result application.CreatePlaylistResult) {
-	var (
-		playlist     = result.Playlist
-		missingSongs = result.MissingSongs
-	)
+func renderResult(result application.CreatePlaylistResult) string {
+	var sections []string
 
-	fmt.Fprintf(out, "Created playlist for %s:\n", playlist.Artist)
+	sections = append(sections, renderHeader(result.Playlist.Artist, result.Setlist.URL))
 
+	sections = append(sections, renderPlaylist(result.Playlist))
+
+	if len(result.MissingSongs) > 0 {
+		sections = append(sections, renderMissingSongs(result.MissingSongs))
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Left, sections...)
+}
+
+func renderHeader(name, url string) string {
+	title := lipgloss.NewStyle().
+		Render(fmt.Sprintf("%s Playlist", name))
+
+	div := lipgloss.NewStyle().
+		Render("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+	var headerParts []string
+	headerParts = append(headerParts, title, div)
+
+	if url != "" {
+		headerParts = append(
+			headerParts,
+			lipgloss.NewStyle().Render("Source: "+url),
+		)
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Left, append(headerParts, "")...)
+}
+
+func renderPlaylist(playlist domain.Playlist) string {
 	var rows [][]string
 	for i, song := range playlist.Songs {
 		rows = append(rows, []string{
@@ -225,17 +253,16 @@ func outputCreatePlaylistResult(out io.Writer, result application.CreatePlaylist
 		Headers("#", "ARTIST", "TITLE").
 		Rows(rows...)
 
-	fmt.Fprintln(out, t)
+	return t.String()
+}
 
-	if len(missingSongs) == 0 {
-		return
-	}
-
-	var missingRows [][]string
+func renderMissingSongs(missingSongs []string) string {
+	var rows [][]string
 	for _, song := range missingSongs {
 		rows = append(rows, []string{song})
 	}
-	mt := table.New().
+
+	t := table.New().
 		Border(lipgloss.HiddenBorder()).
 		StyleFunc(func(row, col int) lipgloss.Style {
 			switch col {
@@ -259,7 +286,7 @@ func outputCreatePlaylistResult(out io.Writer, result application.CreatePlaylist
 			}
 		}).
 		Headers("MISSING SONGS").
-		Rows(missingRows...)
+		Rows(rows...)
 
-	fmt.Fprintln(out, mt)
+	return t.String()
 }
