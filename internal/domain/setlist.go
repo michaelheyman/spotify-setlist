@@ -10,6 +10,7 @@ type Setlist struct {
 	Venue     string
 	Songs     []string
 	EventDate time.Time
+	URL       string
 }
 
 type GetSetlistOption func(*GetSetlistOptions)

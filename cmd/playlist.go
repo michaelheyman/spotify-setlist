@@ -4,7 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
+	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/lipgloss/table"
 	"github.com/cli/browser"
 	application "github.com/michaelheyman/spotify-setlist/internal/application/playlist"
 	"github.com/michaelheyman/spotify-setlist/internal/domain"
@@ -174,7 +177,122 @@ func (c *CreatePlaylistCmd) RunE(cmd *cobra.Command, _ []string) error {
 		return fmt.Errorf("creating playlist from setlist: %w", err)
 	}
 
-	fmt.Fprintf(cmd.OutOrStdout(), "Created playlist for %s\n", result.Playlist.Artist)
+	rendered := renderResult(result)
+
+	fmt.Fprintln(cmd.OutOrStdout(), rendered)
 
 	return nil
+}
+
+func renderResult(result application.CreatePlaylistResult) string {
+	var sections []string
+
+	sections = append(sections, renderHeader(result.Playlist.Artist, result.Setlist))
+
+	sections = append(sections, renderPlaylist(result.Playlist))
+
+	if len(result.MissingSongs) > 0 {
+		sections = append(sections, renderMissingSongs(result.MissingSongs))
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Left, sections...)
+}
+
+func renderHeader(name string, setlist domain.Setlist) string {
+	title := lipgloss.NewStyle().
+		Render(fmt.Sprintf("%s Playlist", name))
+
+	details := lipgloss.JoinHorizontal(
+		lipgloss.Left,
+		setlist.Venue, " - ", setlist.EventDate.Format(time.DateOnly),
+	)
+
+	div := lipgloss.NewStyle().
+		Render("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
+	var headerParts []string
+	headerParts = append(headerParts, title, details, div)
+
+	if setlist.URL != "" {
+		headerParts = append(
+			headerParts,
+			lipgloss.NewStyle().Render("Source: "+setlist.URL),
+		)
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Left, append(headerParts, "")...)
+}
+
+func renderPlaylist(playlist domain.Playlist) string {
+	var rows [][]string
+	for i, song := range playlist.Songs {
+		rows = append(rows, []string{
+			fmt.Sprintf("%d", i+1),
+			playlist.Artist,
+			song,
+		})
+	}
+
+	t := table.New().
+		Border(lipgloss.HiddenBorder()).
+		StyleFunc(func(row, col int) lipgloss.Style {
+			switch col {
+			case 0:
+				return lipgloss.NewStyle().
+					PaddingLeft(1).
+					PaddingRight(1).
+					Align(lipgloss.Right)
+			case 1:
+				return lipgloss.NewStyle().
+					PaddingLeft(1).
+					PaddingRight(1).
+					Align(lipgloss.Center)
+			case 2:
+				return lipgloss.NewStyle().
+					PaddingLeft(1).
+					PaddingRight(1).
+					Align(lipgloss.Left)
+			default:
+				return lipgloss.NewStyle().Align(lipgloss.Left)
+			}
+		}).
+		Headers("#", "ARTIST", "TITLE").
+		Rows(rows...)
+
+	return t.String()
+}
+
+func renderMissingSongs(missingSongs []string) string {
+	var rows [][]string
+	for _, song := range missingSongs {
+		rows = append(rows, []string{song})
+	}
+
+	t := table.New().
+		Border(lipgloss.HiddenBorder()).
+		StyleFunc(func(row, col int) lipgloss.Style {
+			switch col {
+			case 0:
+				return lipgloss.NewStyle().
+					PaddingLeft(1).
+					PaddingRight(1).
+					Align(lipgloss.Right)
+			case 1:
+				return lipgloss.NewStyle().
+					PaddingLeft(1).
+					PaddingRight(1).
+					Align(lipgloss.Center)
+			case 2:
+				return lipgloss.NewStyle().
+					PaddingLeft(1).
+					PaddingRight(1).
+					Align(lipgloss.Left)
+			default:
+				return lipgloss.NewStyle().Align(lipgloss.Left)
+			}
+		}).
+		Headers("MISSING SONGS").
+		Rows(rows...)
+
+	return t.String()
 }

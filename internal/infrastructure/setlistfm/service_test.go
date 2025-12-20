@@ -82,6 +82,7 @@ func TestSetlistFMService_GetSetlists(t *testing.T) {
 						"Sunset",
 					},
 					EventDate: time.Date(2020, time.October, 30, 0, 0, 0, 0, time.UTC),
+					URL:       "https://www.setlist.fm/setlist/the-midnight/2020/libbey-bowl-ojai-ca-2b82f01a.html",
 				},
 				{
 					Artist: "The Midnight",
@@ -95,6 +96,7 @@ func TestSetlistFMService_GetSetlists(t *testing.T) {
 						"Sunset",
 					},
 					EventDate: time.Date(2019, time.November, 17, 0, 0, 0, 0, time.UTC),
+					URL:       "https://www.setlist.fm/setlist/the-midnight/2019/autodromo-hermanos-rodriguez-mexico-city-mexico-439a93f7.html",
 				},
 			},
 			wantErr: assert.NoError,
