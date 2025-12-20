@@ -170,6 +170,7 @@ func (asr getArtistSetlistsResponse) toSetlists() ([]domain.Setlist, error) {
 			Artist: s.Artist.Name,
 			Venue:  s.Venue.Name,
 			Songs:  songs,
+			URL:    s.URL,
 		}
 
 		eventDate, err := setlistEventDate(s.EventDate)
