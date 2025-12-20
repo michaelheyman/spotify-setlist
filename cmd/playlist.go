@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/table"
@@ -186,7 +187,7 @@ func (c *CreatePlaylistCmd) RunE(cmd *cobra.Command, _ []string) error {
 func renderResult(result application.CreatePlaylistResult) string {
 	var sections []string
 
-	sections = append(sections, renderHeader(result.Playlist.Artist, result.Setlist.URL))
+	sections = append(sections, renderHeader(result.Playlist.Artist, result.Setlist))
 
 	sections = append(sections, renderPlaylist(result.Playlist))
 
@@ -197,20 +198,25 @@ func renderResult(result application.CreatePlaylistResult) string {
 	return lipgloss.JoinVertical(lipgloss.Left, sections...)
 }
 
-func renderHeader(name, url string) string {
+func renderHeader(name string, setlist domain.Setlist) string {
 	title := lipgloss.NewStyle().
 		Render(fmt.Sprintf("%s Playlist", name))
+
+	details := lipgloss.JoinHorizontal(
+		lipgloss.Left,
+		setlist.Venue, " - ", setlist.EventDate.Format(time.DateOnly),
+	)
 
 	div := lipgloss.NewStyle().
 		Render("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 	var headerParts []string
-	headerParts = append(headerParts, title, div)
+	headerParts = append(headerParts, title, details, div)
 
-	if url != "" {
+	if setlist.URL != "" {
 		headerParts = append(
 			headerParts,
-			lipgloss.NewStyle().Render("Source: "+url),
+			lipgloss.NewStyle().Render("Source: "+setlist.URL),
 		)
 	}
 
