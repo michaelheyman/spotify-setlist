@@ -8,6 +8,8 @@ Spotify Setlist is a command-line tool that helps you create Spotify playlists b
 The created playlist allow you to easily explore an artist's live repertoire, or relive the experience of a specific
 concert.
 
+![demo](docs/demo.gif)
+
 ## Installation
 
 ### Prerequisites
