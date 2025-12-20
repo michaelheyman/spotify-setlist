@@ -33,3 +33,6 @@ go.work.sum
 
 # Generated files
 *.gen.go
+
+# Binaries
+bin/
