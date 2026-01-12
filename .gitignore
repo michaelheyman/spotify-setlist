@@ -31,8 +31,5 @@ go.work.sum
 # .idea/
 # .vscode/
 
-# Generated files
-*.gen.go
-
 # Binaries
 bin/

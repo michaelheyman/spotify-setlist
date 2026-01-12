@@ -50,6 +50,9 @@ tasks:
 
   mocks.generate:
     desc: generate mocks
+    preconditions:
+      - sh: which mockery
+        msg: "mockery is not installed. Please install it from https://vektra.github.io/mockery/latest/installation/#homebrew"
     cmds:
       - mockery
 
