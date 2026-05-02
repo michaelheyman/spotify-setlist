@@ -17,7 +17,7 @@ import (
 
 func Test_spotifyAuthHandler_StartAuthFlow(t *testing.T) {
 	state := "abc123"
-	authURL := "https://accounts.spotify.com/authorize?client_id=11111111111111111111111111111111&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Fcallback&response_type=code&scope=playlist-modify-private+playlist-read-private+user-read-private+user-read-email&state=abc123"
+	authURL := "https://accounts.spotify.com/authorize?client_id=11111111111111111111111111111111&redirect_uri=http%3A%2F%2F127.0.0.1%3A8080%2Fcallback&response_type=code&scope=playlist-modify-private+playlist-read-private+user-read-private+user-read-email&state=abc123"
 	mockClient := &mocks.SpotifyClient{}
 	token := &oauth2.Token{
 		AccessToken:  "some-access-token",
@@ -230,7 +230,7 @@ func Test_spotifyAuthHandler_StartAuthFlow(t *testing.T) {
 }
 
 func createQueryURL(state string) (string, error) {
-	callbackURL := "http://localhost:8080/callback"
+	callbackURL := "http://127.0.0.1:8080/callback"
 
 	u, err := url.Parse(callbackURL)
 	if err != nil {

@@ -45,7 +45,9 @@ credentials and configure the application.
 1. Log in with your Spotify account (create one if needed)
 1. Create a new application
 1. Copy your Client ID and Client Secret
-1. Set the Redirect URI to `http://localhost:8888/callback` in your app settings
+1. In your app settings, add `http://127.0.0.1:8080/callback` as a Redirect URI
+
+> **Note:** Spotify requires loopback redirect URIs to use an explicit IP address (`127.0.0.1`) rather than `localhost`. Apps created after April 9, 2025 enforce this — using `http://localhost` will result in a "redirect_uri: Insecure" error.
 
 #### Setlist.fm
 
@@ -65,7 +67,7 @@ Create a `.env` file in your project directory or set the following environment 
 ```bash
 export SPOTIFY_CLIENT_ID="your_spotify_client_id"
 export SPOTIFY_CLIENT_SECRET="your_spotify_client_secret"
-export SPOTIFY_REDIRECT_URI="http://localhost:8888/callback"
+export SPOTIFY_REDIRECT_URI="http://127.0.0.1:8080/callback"
 export SETLIST_FM_API_KEY="your_setlist_fm_api_key"
 ```
 
@@ -76,7 +78,7 @@ Alternatively, create a `~/.spotify-setlist.yaml` file in your home directory:
 ```yaml
 spotify_client_id: "your_spotify_client_id"
 spotify_client_secret: "your_spotify_client_secret"
-spotify_redirect_uri: "http://localhost:8888/callback"
+spotify_redirect_uri: "http://127.0.0.1:8080/callback"
 setlist_fm_api_key: "your_setlist_fm_api_key"
 ```
 

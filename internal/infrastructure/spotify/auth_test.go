@@ -15,7 +15,7 @@ import (
 
 func TestSpotifyAuth_AuthURL(t *testing.T) {
 	state := "abc123"
-	authURL := "https://accounts.spotify.com/authorize?client_id=11111111111111111111111111111111&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Fcallback&response_type=code&scope=playlist-modify-private+playlist-read-private+user-read-private+user-read-email&state=abc123"
+	authURL := "https://accounts.spotify.com/authorize?client_id=11111111111111111111111111111111&redirect_uri=http%3A%2F%2F127.0.0.1%3A8080%2Fcallback&response_type=code&scope=playlist-modify-private+playlist-read-private+user-read-private+user-read-email&state=abc123"
 
 	tests := []struct {
 		name            string
@@ -27,7 +27,7 @@ func TestSpotifyAuth_AuthURL(t *testing.T) {
 			name:  "should return auth url",
 			state: state,
 			setExpectations: func(a *mocks.SpotifyAuthenticator) {
-				a.EXPECT().AuthURL(state).Return(authURL)
+				a.EXPECT().AuthURL(state, mock.Anything).Return(authURL)
 			},
 			want: authURL,
 		},
@@ -72,6 +72,7 @@ func TestSpotifyAuth_Token(t *testing.T) {
 						mock.Anything,
 						state,
 						req,
+						mock.Anything,
 					).
 					Return(token, nil)
 			},
@@ -88,6 +89,7 @@ func TestSpotifyAuth_Token(t *testing.T) {
 						mock.Anything,
 						state,
 						req,
+						mock.Anything,
 					).
 					Return(nil, assert.AnError)
 			},

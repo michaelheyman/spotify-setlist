@@ -18,6 +18,7 @@ func (s ExternalSpotifyClientFactory) NewClient(httpClient *http.Client) domain.
 
 type SpotifyAuth struct {
 	authenticator externalsdk.SpotifyAuthenticator
+	verifier      string
 }
 
 func NewSpotifyAuth(authenticator externalsdk.SpotifyAuthenticator) *SpotifyAuth {
@@ -26,14 +27,15 @@ func NewSpotifyAuth(authenticator externalsdk.SpotifyAuthenticator) *SpotifyAuth
 	}
 }
 
-func (a SpotifyAuth) AuthURL(state string) string {
-	return a.authenticator.AuthURL(state)
+func (a *SpotifyAuth) AuthURL(state string) string {
+	a.verifier = oauth2.GenerateVerifier()
+	return a.authenticator.AuthURL(state, oauth2.S256ChallengeOption(a.verifier))
 }
 
-func (a SpotifyAuth) Token(ctx context.Context, state string, r *http.Request) (*oauth2.Token, error) {
-	return a.authenticator.Token(ctx, state, r)
+func (a *SpotifyAuth) Token(ctx context.Context, state string, r *http.Request) (*oauth2.Token, error) {
+	return a.authenticator.Token(ctx, state, r, oauth2.VerifierOption(a.verifier))
 }
 
-func (a SpotifyAuth) Client(ctx context.Context, token *oauth2.Token) *http.Client {
+func (a *SpotifyAuth) Client(ctx context.Context, token *oauth2.Token) *http.Client {
 	return a.authenticator.Client(ctx, token)
 }

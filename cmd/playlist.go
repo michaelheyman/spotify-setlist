@@ -70,7 +70,7 @@ Requires Spotify and setlist.fm API credentials.`,
 	cmd.Flags().String("spotify-client-id", "", "Spotify client ID (env: SPOTIFY_CLIENT_ID)")
 	cmd.Flags().String("spotify-client-secret", "", "Spotify client secret (env: SPOTIFY_CLIENT_SECRET)")
 	cmd.Flags().
-		String("spotify-redirect-uri", "http://localhost:8080/callback", "Spotify redirect URI (env: SPOTIFY_REDIRECT_URI)")
+		String("spotify-redirect-uri", "http://127.0.0.1:8080/callback", "Spotify redirect URI (env: SPOTIFY_REDIRECT_URI)")
 	cmd.Flags().String("setlistfm-api-key", "", "Setlist.fm API key (env: SETLIST_FM_API_KEY)")
 
 	// Bind flags to viper keys for later lookups
@@ -130,6 +130,7 @@ func (c *CreatePlaylistCmd) PreRunE(cmd *cobra.Command, _ []string) error {
 
 	// AuthURL will be empty if a refresh token was found
 	if authURL != "" {
+		fmt.Fprintf(stderr, "Auth URL: %s\n\n", authURL)
 		if err := browser.OpenURL(authURL); err != nil {
 			return err
 		}
