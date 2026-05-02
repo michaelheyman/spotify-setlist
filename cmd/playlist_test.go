@@ -23,7 +23,7 @@ func TestCreatePlaylistCmd_Execute(t *testing.T) {
 	}{
 		clientID:     "11111111111111111111111111111111",
 		clientSecret: "ffffffffffffffffffffffffffffffff",
-		redirectURI:  "http://localhost:8080/callback",
+		redirectURI:  "http://127.0.0.1:8080/callback",
 		apiKey:       "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 	}
 	validEnv := map[string]string{
@@ -114,6 +114,9 @@ func TestCreatePlaylistCmd_Execute(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			for _, key := range []string{"SPOTIFY_CLIENT_ID", "SPOTIFY_CLIENT_SECRET", "SPOTIFY_REDIRECT_URI", "SETLIST_FM_API_KEY"} {
+				t.Setenv(key, "")
+			}
 			for k, v := range tt.env {
 				t.Setenv(k, v)
 			}
