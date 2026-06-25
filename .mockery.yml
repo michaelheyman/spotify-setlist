@@ -12,6 +12,9 @@ require-template-schema-exists: true
 template: testify
 template-schema: '{{.Template}}.schema.json'
 packages:
+  github.com/michaelheyman/spotify-setlist/internal/application/auth:
+    config:
+      all: true
   github.com/michaelheyman/spotify-setlist/internal/application/playlist:
     config:
       all: true
