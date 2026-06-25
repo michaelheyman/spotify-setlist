@@ -8,12 +8,11 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/table"
-	"github.com/cli/browser"
+	auth "github.com/michaelheyman/spotify-setlist/internal/application/auth"
 	application "github.com/michaelheyman/spotify-setlist/internal/application/playlist"
 	"github.com/michaelheyman/spotify-setlist/internal/domain"
 	"github.com/michaelheyman/spotify-setlist/internal/infrastructure/setlistfm"
 	"github.com/michaelheyman/spotify-setlist/internal/infrastructure/spotify"
-	"github.com/michaelheyman/spotify-setlist/internal/interfaces"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	spotifyauth "github.com/zmb3/spotify/v2/auth"
@@ -121,23 +120,10 @@ func (c *CreatePlaylistCmd) PreRunE(cmd *cobra.Command, _ []string) error {
 	}
 
 	spotifyFactory := spotify.ExternalSpotifyClientFactory{}
-	handler := interfaces.NewSpotifyAuthHandler(spotifyFactory, authenticator, c.tokenStore)
+	provider := spotify.NewSpotifyAuthProvider(spotifyFactory, authenticator, stderr)
+	session := auth.NewSessionService(c.tokenStore, provider)
 
-	authURL, err := handler.StartAuthFlow(ctx)
-	if err != nil {
-		return err
-	}
-
-	// AuthURL will be empty if a refresh token was found
-	if authURL != "" {
-		fmt.Fprintf(stderr, "Auth URL: %s\n\n", authURL)
-		if err := browser.OpenURL(authURL); err != nil {
-			return err
-		}
-		fmt.Fprintf(stderr, "Your browser has been opened to visit:\n\n\t%s\n\n", authURL)
-	}
-
-	client, err := handler.WaitForClient(ctx)
+	client, err := session.AuthenticatedClient(ctx)
 	if err != nil {
 		return err
 	}

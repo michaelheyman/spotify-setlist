@@ -34,6 +34,11 @@ type TokenStore interface {
 	LoadToken(ctx context.Context) (*SpotifyToken, bool, error)
 }
 
+type SpotifyAuthProvider interface {
+	ClientFromToken(ctx context.Context, token *SpotifyToken) SpotifyClient
+	Authenticate(ctx context.Context) (*SpotifyToken, error)
+}
+
 type SpotifyAuthConfig struct {
 	ClientID     string
 	ClientSecret string
