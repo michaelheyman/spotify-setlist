@@ -99,8 +99,9 @@ spotify-setlist create-playlist --artist 'The Beatles'
 The command will prompt you to authenticate with Spotify to grant it permission to create playlists on your behalf. It
 will then create the playlist based on the setlist it retrieves from setlist.fm.
 
-Subsequent executions will use the saved refresh token, so you won't need to authenticate again unless the token has
-expired.
+Subsequent executions reuse the saved refresh token, so you won't need to authenticate again. Spotify expires refresh
+tokens after six months; when that happens the command automatically discards the stale token and prompts you to sign in
+again, then continues with the run.
 
 ### Options
 

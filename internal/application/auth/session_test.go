@@ -23,10 +23,11 @@ func Test_sessionService_AuthenticatedClient(t *testing.T) {
 		wantErr         assert.ErrorAssertionFunc
 	}{
 		{
-			name: "should reuse the stored token when one is present",
+			name: "should reuse the stored token when it is still valid",
 			setExpectations: func(s *mocks.TokenStore, p *mocks.SpotifyAuthProvider, c *mocks.SpotifyClient) {
 				s.EXPECT().LoadToken(mock.Anything).Return(token, true, nil)
 				p.EXPECT().ClientFromToken(mock.Anything, token).Return(c)
+				c.EXPECT().CurrentUser(mock.Anything).Return("user", nil)
 			},
 			wantErr: assert.NoError,
 		},
@@ -41,6 +42,18 @@ func Test_sessionService_AuthenticatedClient(t *testing.T) {
 			wantErr: assert.NoError,
 		},
 		{
+			name: "should discard the token and re-authenticate when the session has expired",
+			setExpectations: func(s *mocks.TokenStore, p *mocks.SpotifyAuthProvider, c *mocks.SpotifyClient) {
+				s.EXPECT().LoadToken(mock.Anything).Return(token, true, nil)
+				p.EXPECT().ClientFromToken(mock.Anything, token).Return(c)
+				c.EXPECT().CurrentUser(mock.Anything).Return("", domain.ErrSessionExpired)
+				s.EXPECT().DeleteToken(mock.Anything).Return(nil)
+				p.EXPECT().Authenticate(mock.Anything).Return(token, nil)
+				s.EXPECT().SaveToken(mock.Anything, token).Return(nil)
+			},
+			wantErr: assert.NoError,
+		},
+		{
 			name: "should return error when loading the token fails",
 			setExpectations: func(s *mocks.TokenStore, _ *mocks.SpotifyAuthProvider, _ *mocks.SpotifyClient) {
 				s.EXPECT().LoadToken(mock.Anything).Return(nil, false, assert.AnError)
@@ -48,6 +61,33 @@ func Test_sessionService_AuthenticatedClient(t *testing.T) {
 			wantErr: func(_ assert.TestingT, err error, _ ...any) bool {
 				require.ErrorIs(t, err, assert.AnError)
 				assert.ErrorContains(t, err, "loading token:")
+				return true
+			},
+		},
+		{
+			name: "should return error when discarding the expired token fails",
+			setExpectations: func(s *mocks.TokenStore, p *mocks.SpotifyAuthProvider, c *mocks.SpotifyClient) {
+				s.EXPECT().LoadToken(mock.Anything).Return(token, true, nil)
+				p.EXPECT().ClientFromToken(mock.Anything, token).Return(c)
+				c.EXPECT().CurrentUser(mock.Anything).Return("", domain.ErrSessionExpired)
+				s.EXPECT().DeleteToken(mock.Anything).Return(assert.AnError)
+			},
+			wantErr: func(_ assert.TestingT, err error, _ ...any) bool {
+				require.ErrorIs(t, err, assert.AnError)
+				assert.ErrorContains(t, err, "discarding expired token:")
+				return true
+			},
+		},
+		{
+			name: "should return error when verifying the session fails for a non-expiry reason",
+			setExpectations: func(s *mocks.TokenStore, p *mocks.SpotifyAuthProvider, c *mocks.SpotifyClient) {
+				s.EXPECT().LoadToken(mock.Anything).Return(token, true, nil)
+				p.EXPECT().ClientFromToken(mock.Anything, token).Return(c)
+				c.EXPECT().CurrentUser(mock.Anything).Return("", assert.AnError)
+			},
+			wantErr: func(_ assert.TestingT, err error, _ ...any) bool {
+				require.ErrorIs(t, err, assert.AnError)
+				assert.ErrorContains(t, err, "verifying session:")
 				return true
 			},
 		},

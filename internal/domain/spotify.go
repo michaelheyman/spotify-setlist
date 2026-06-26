@@ -32,6 +32,7 @@ type AuthenticationFactory interface {
 type TokenStore interface {
 	SaveToken(ctx context.Context, token *SpotifyToken) error
 	LoadToken(ctx context.Context) (*SpotifyToken, bool, error)
+	DeleteToken(ctx context.Context) error
 }
 
 type SpotifyAuthProvider interface {

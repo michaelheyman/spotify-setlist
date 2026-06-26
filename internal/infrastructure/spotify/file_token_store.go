@@ -66,3 +66,10 @@ func (s FileTokenStore) LoadToken(_ context.Context) (*domain.SpotifyToken, bool
 	}
 	return &token, true, nil
 }
+
+func (s FileTokenStore) DeleteToken(_ context.Context) error {
+	if err := os.Remove(s.path); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("deleting token file: %w", err)
+	}
+	return nil
+}
