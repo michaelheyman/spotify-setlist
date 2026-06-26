@@ -11,7 +11,12 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/zmb3/spotify/v2"
+	"golang.org/x/oauth2"
 )
+
+// errInvalidGrant mimics the oauth2 token-refresh failure Spotify returns when a
+// refresh token has expired.
+var errInvalidGrant = &oauth2.RetrieveError{ErrorCode: "invalid_grant"}
 
 func Test_spotifyClient_CreatePlaylistForUser(t *testing.T) {
 	testdata := struct {
@@ -128,6 +133,26 @@ func Test_spotifyClient_CreatePlaylistForUser(t *testing.T) {
 			wantErr: func(_ assert.TestingT, err error, _ ...any) bool {
 				require.ErrorIs(t, err, assert.AnError)
 				assert.ErrorContains(t, err, "adding tracks to playlist:")
+				return true
+			},
+		},
+		{
+			name:     "should return session expired error when the refresh token is invalid",
+			playlist: testdata.playlist,
+			setExpectations: func(c *mocks.SpotifyClient) {
+				c.EXPECT().
+					CreatePlaylistForUser(
+						mock.Anything,
+						testdata.spotifyUserID,
+						testdata.playlist.Name,
+						testdata.playlist.Description,
+						testdata.playlist.Public,
+						testdata.playlist.Collaborative,
+					).
+					Return(nil, errInvalidGrant)
+			},
+			wantErr: func(_ assert.TestingT, err error, _ ...any) bool {
+				require.ErrorIs(t, err, domain.ErrSessionExpired)
 				return true
 			},
 		},
@@ -249,6 +274,24 @@ func Test_spotifyClient_SearchTrack(t *testing.T) {
 			},
 			wantErr: assert.NoError,
 		},
+		{
+			name:   "should return session expired error when the refresh token is invalid",
+			artist: testdata.artist,
+			title:  testdata.title,
+			setExpectations: func(c *mocks.SpotifyClient) {
+				c.EXPECT().
+					Search(
+						mock.Anything,
+						trackQuery(testdata.artist, testdata.title),
+						spotify.SearchType(spotify.SearchTypeTrack),
+					).
+					Return(nil, errInvalidGrant)
+			},
+			wantErr: func(_ assert.TestingT, err error, _ ...any) bool {
+				require.ErrorIs(t, err, domain.ErrSessionExpired)
+				return true
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -305,6 +348,18 @@ func Test_spotifyClient_CurrentUser(t *testing.T) {
 			wantErr: func(_ assert.TestingT, err error, _ ...any) bool {
 				require.ErrorIs(t, err, assert.AnError)
 				assert.ErrorContains(t, err, "getting current user:")
+				return true
+			},
+		},
+		{
+			name: "should return session expired error when the refresh token is invalid",
+			setExpectations: func(c *mocks.SpotifyClient) {
+				c.EXPECT().
+					CurrentUser(mock.Anything).
+					Return(nil, errInvalidGrant)
+			},
+			wantErr: func(_ assert.TestingT, err error, _ ...any) bool {
+				require.ErrorIs(t, err, domain.ErrSessionExpired)
 				return true
 			},
 		},

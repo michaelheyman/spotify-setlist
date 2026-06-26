@@ -38,6 +38,57 @@ func (_m *TokenStore) EXPECT() *TokenStore_Expecter {
 	return &TokenStore_Expecter{mock: &_m.Mock}
 }
 
+// DeleteToken provides a mock function for the type TokenStore
+func (_mock *TokenStore) DeleteToken(ctx context.Context) error {
+	ret := _mock.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteToken")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context) error); ok {
+		r0 = returnFunc(ctx)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// TokenStore_DeleteToken_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteToken'
+type TokenStore_DeleteToken_Call struct {
+	*mock.Call
+}
+
+// DeleteToken is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *TokenStore_Expecter) DeleteToken(ctx interface{}) *TokenStore_DeleteToken_Call {
+	return &TokenStore_DeleteToken_Call{Call: _e.mock.On("DeleteToken", ctx)}
+}
+
+func (_c *TokenStore_DeleteToken_Call) Run(run func(ctx context.Context)) *TokenStore_DeleteToken_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *TokenStore_DeleteToken_Call) Return(err error) *TokenStore_DeleteToken_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *TokenStore_DeleteToken_Call) RunAndReturn(run func(ctx context.Context) error) *TokenStore_DeleteToken_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // LoadToken provides a mock function for the type TokenStore
 func (_mock *TokenStore) LoadToken(ctx context.Context) (*domain.SpotifyToken, bool, error) {
 	ret := _mock.Called(ctx)

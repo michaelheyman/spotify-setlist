@@ -2,11 +2,13 @@ package spotify
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/michaelheyman/spotify-setlist/internal/domain"
 	"github.com/michaelheyman/spotify-setlist/internal/infrastructure/externalsdk"
 	spotify "github.com/zmb3/spotify/v2"
+	"golang.org/x/oauth2"
 )
 
 type SpotifyClient struct {
@@ -61,6 +63,9 @@ func (c SpotifyClient) CreatePlaylist(ctx context.Context, user string, playlist
 		playlist.Collaborative,
 	)
 	if err != nil {
+		if isInvalidGrant(err) {
+			return fmt.Errorf("%w: %w", domain.ErrSessionExpired, err)
+		}
 		return fmt.Errorf("creating playlist for user: %w", err)
 	}
 
@@ -79,6 +84,9 @@ func (c SpotifyClient) CreatePlaylist(ctx context.Context, user string, playlist
 func (c SpotifyClient) CurrentUser(ctx context.Context) (string, error) {
 	user, err := c.client.CurrentUser(ctx)
 	if err != nil {
+		if isInvalidGrant(err) {
+			return "", fmt.Errorf("%w: %w", domain.ErrSessionExpired, err)
+		}
 		return "", fmt.Errorf("getting current user: %w", err)
 	}
 	return user.ID, nil
@@ -87,6 +95,9 @@ func (c SpotifyClient) CurrentUser(ctx context.Context) (string, error) {
 func (c SpotifyClient) SearchTrack(ctx context.Context, artist, title string) (domain.SpotifySearchResult, error) {
 	result, err := c.client.Search(ctx, trackQuery(artist, title), spotify.SearchTypeTrack)
 	if err != nil {
+		if isInvalidGrant(err) {
+			return domain.SpotifySearchResult{}, fmt.Errorf("%w: %w", domain.ErrSessionExpired, err)
+		}
 		return domain.SpotifySearchResult{}, fmt.Errorf("searching for song '%s': %w", title, err)
 	}
 
@@ -110,4 +121,13 @@ func (c SpotifyClient) SearchTrack(ctx context.Context, artist, title string) (d
 
 func trackQuery(artist, title string) string {
 	return fmt.Sprintf(`track:"%s" artist:"%s"`, title, artist)
+}
+
+// isInvalidGrant reports whether err is an OAuth token refresh failure caused by
+// an expired or revoked refresh token (Spotify returns invalid_grant). It keeps
+// the oauth2 dependency contained to this boundary so callers can react to
+// domain.ErrSessionExpired instead.
+func isInvalidGrant(err error) bool {
+	var retrieveErr *oauth2.RetrieveError
+	return errors.As(err, &retrieveErr) && retrieveErr.ErrorCode == "invalid_grant"
 }

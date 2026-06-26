@@ -95,7 +95,6 @@ func (p *SpotifyAuthProvider) Authenticate(ctx context.Context) (*domain.Spotify
 	}
 
 	authURL := p.auth.AuthURL(p.state)
-	fmt.Fprintf(p.out, "Auth URL: %s\n\n", authURL)
 	if err := p.opener.Open(authURL); err != nil {
 		_ = p.shutdown(ctx)
 		return nil, fmt.Errorf("opening browser: %w", err)
